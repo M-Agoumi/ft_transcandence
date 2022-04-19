@@ -26,7 +26,7 @@ export class AuthService {
 			// delete user.hash;
 			// // return saved user
 			// return (user);
-			return (this.signToken(user.id, user.email)); 
+			return (this.signToken(user.id, user.email));
 		}
 		catch (error) {
 			if (/*error instanceof PrismaClientKnownRequestError && */error.code === 'P2002') {
@@ -46,10 +46,9 @@ export class AuthService {
 		const pwMatches = await argon.verify(user.hash, dto.password);
 		if (!pwMatches) throw new ForbiddenException('Credentials icorrect')
 		// delete user.hash;
-		return (this.signToken(user.id, user.email)); 
+		return (this.signToken(user.id, user.email));
 	}
-	async signToken(UserId: number, email: string): Promise<{access_token: string}>
-	{
+	async signToken(UserId: number, email: string): Promise<{ access_token: string }> {
 		const payload = {
 			sub: UserId,
 			email
