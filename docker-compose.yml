@@ -22,7 +22,7 @@ services:
       - 3000:3000
       - 9229:9229
   
-  # Our react Frontend
+  # Our Angular Frontend
   client:
     build:
       dockerfile: dockerfile
@@ -33,7 +33,7 @@ services:
       - ./client:/client/src/app
       - /client/node_modules
     ports:
-      - 4200:3000
+      - 4200:4200
     links:
       - api
 
