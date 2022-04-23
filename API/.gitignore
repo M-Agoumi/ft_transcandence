@@ -2,6 +2,7 @@
 /dist
 /node_modules
 ./API/node_modules
+./API/src/node_modules
 
 # Logs
 logs
