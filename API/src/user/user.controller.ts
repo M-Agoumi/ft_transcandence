@@ -1,21 +1,33 @@
-import { Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Observable, switchMap } from 'rxjs';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UserI } from './dto/user.interface';
+import { UserHelperService } from './user-helper/user-helper.service';
+import { UserService } from './user.service';
+
 // import { AuthGuard } from '@nestjs/passport';
 // import { Request } from 'express';
-import { GetUser } from 'src/auth/decorator';
-import { JtwGuard } from 'src/auth/guard';
-import { User } from '@prisma/client'
+// import { User } from '@prisma/client'
 
-@UseGuards(JtwGuard)
 @Controller('users')
 export class UserController {
-	@Get('me')
-	getMe(@GetUser() user: User){
-		// console.log({
-		// 	user: req.user,
-		// })
-		return (user)
+	constructor(private userservice: UserService, private userHelper: UserHelperService) { }
+
+	@Post()
+	create(@Body() createUserDto: CreateUserDto){
+		return (this.userHelper.CreatUserDtoEntity(createUserDto).pipe(switchMap((user: UserI) => this.userservice.create(user))));
+		// return (true);
 	}
 
-	@Patch()
-	editUser(){}
+	@Get()
+	findAll() {
+
+	}
+
+	@Post()
+	login() {
+
+	}
+
+
 }
