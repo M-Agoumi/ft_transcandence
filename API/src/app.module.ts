@@ -15,7 +15,8 @@ import { UserService } from './user/user.service';
     username: 'user',
     password: 'password',
     database: 'db',
-    entities: [UserEntity]}),]
+    entities: [UserEntity],
+    synchronize: true,}),]
   // controllers: [UserController],
   // providers: [UserService],
 })
