@@ -7,6 +7,7 @@ import { from, map, Observable, switchMap } from 'rxjs';
 import { bcrypt } from 'bcryptjs';
 import * as argon from "argon2"
 import { stringify } from 'querystring';
+import { LoginUserDto } from './dto/login-user.dto';
 
 
 @Injectable()
@@ -17,9 +18,14 @@ export class UserService {
 	) {
 	}
 
+	async get_all_users()
+	{
+		return await this.userRepository.manager.find(UserEntity);
+	}
+
 	async create(newUser: UserI) {
 		try {
-			this.mailExists(newUser.email).pipe(
+			await this.mailExists(newUser.email).pipe(
 				switchMap((exists: boolean): Observable<boolean> => {
 					if (exists)
 						throw new HttpException('email aleady in use', HttpStatus.CONFLICT);
@@ -29,9 +35,9 @@ export class UserService {
 			)
 			//generate the password hash
 			const hash = await argon.hash(newUser.password);
+			newUser.password = hash;
 			///save user
-			this.userRepository.save(newUser)
-			return (this.findOne(newUser.id)); 
+			const user = this.userRepository.save(newUser);
 		}
 		catch (error) {
 			if (/*error instanceof PrismaClientKnownRequestError && */error.code === 'P2002') {
@@ -48,12 +54,25 @@ export class UserService {
 		return from(this.userRepository.findOneBy({ id }));
 	}
 
-	private mailExists(email: string) {
+	private  mailExists(email: string) {
 		return from(this.userRepository.findOneBy({ email })).pipe(
 			map((user: UserI) => {
 				if (user)
 					return true
 				return false;
 			}))
+	}
+
+	async login(user: LoginUserDto)
+	{
+		const email = user.email;
+		const returned_user = await this.userRepository.findOneBy({email})
+		if (!returned_user) throw new ForbiddenException('Credentials icorrect')
+		console.log(user.password)
+		const pwMatches = await argon.verify(returned_user.password, user.password);
+		if (!pwMatches) throw new ForbiddenException('Credentials icorrect')
+		console.log('logged in');
+		// returned_user.password = "";
+		return returned_user
 	}
 }

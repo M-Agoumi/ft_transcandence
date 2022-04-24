@@ -16,9 +16,9 @@ export class UserHelperService {
 	}
 	
 	loginUserDtoToEntity(UserDto: LoginUserDto){
-		return {
+		return of ({
 			email: UserDto.email,
 			password: UserDto.password
-		}
+		})
 	}
 }
