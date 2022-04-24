@@ -23,6 +23,18 @@ export class UserService {
 		return await this.userRepository.manager.find(UserEntity);
 	}
 
+	async remove_user(user: LoginUserDto)
+	{
+		const email = user.email;
+		const to_be_removed = await this.userRepository.findOneBy({email})
+		if (to_be_removed)
+		{
+			console.log(`removing ${to_be_removed.username}`)
+			await this.userRepository.remove(to_be_removed);
+			console.log(`removed`)
+		}
+	}
+
 	async create(newUser: UserI) {
 		try {
 			await this.mailExists(newUser.email).pipe(
@@ -75,4 +87,5 @@ export class UserService {
 		// returned_user.password = "";
 		return returned_user
 	}
+x
 }
