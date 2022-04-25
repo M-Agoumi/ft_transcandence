@@ -15,18 +15,6 @@ export class UserEntity {
 	@Column(/*{ select: false }*/)
 	password: string;
 
-
-	@Column(/*{ select: false }*/)
-	friends: string[];
-	
-	@Column(/*{ select: false }*/)
-	status: string;
-
-	@OneToOne(() => UserStats)
-	@JoinColumn()
-	stats: UserStats
-
-
 	@BeforeInsert()
 	emailToLowerCase() {
 		this.email = this.email.toLowerCase();
