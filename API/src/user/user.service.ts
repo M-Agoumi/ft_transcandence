@@ -8,18 +8,20 @@ import { bcrypt } from 'bcryptjs';
 import * as argon from "argon2"
 import { stringify } from 'querystring';
 import { LoginUserDto } from './dto/login-user.dto';
+import { Strategy_42 } from './strategy/strategy';
 
 
 @Injectable()
 export class UserService {
 	constructor(
 		@InjectRepository(UserEntity)
-		private readonly userRepository: Repository<UserEntity>
+		private readonly userRepository: Repository<UserEntity>,
+		service_42: Strategy_42
 	) {
 	}
-
 	async get_all_users()
 	{
+		
 		return await this.userRepository.manager.find(UserEntity);
 	}
 

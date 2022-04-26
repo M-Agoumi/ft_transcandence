@@ -1,0 +1,38 @@
+<div class="container">
+
+	<div>
+		<div class="login">
+			<a [routerLink]="['../login']" >Go To Login</a>
+		</div>
+
+		<div> -->
+
+			<mat-card>
+				<mat-card-title>Register</mat-card-title>
+
+					<mat-card-content>
+						<form [formGroup]="Form" (ngSubmit)="register()">
+
+							<mat-form-field>
+								<input type="email" matInput placeholder="Email" fonrmControllerName="email">
+							</mat-form-field>
+
+							<mat-form-field>
+								<input type="text" matInput placeholder="Username" fonrmControllerName="username">
+							</mat-form-field>
+
+							<mat-form-field>
+								<input type="password" matInput placeholder="Password" fonrmControllerName="password">
+							</mat-form-field>
+
+
+						</form>
+					</mat-card-content>
+
+			</mat-card>
+
+		</div>
+
+	</div>
+
+</div>

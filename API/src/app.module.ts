@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserStats } from './user/dto/stats.entity';
 import { UserEntity } from './user/dto/user.entity';
 import { UserController } from './user/user.controller';
 
@@ -15,7 +16,7 @@ import { UserService } from './user/user.service';
     username: 'user',
     password: 'password',
     database: 'db',
-    entities: [UserEntity],
+    entities: [UserEntity, UserStats],
     synchronize: true,}),]
   // controllers: [UserController],
   // providers: [UserService],
