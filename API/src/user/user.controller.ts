@@ -19,6 +19,10 @@ export class UserController {
 
 	@UseGuards(My_guard)
 	@Get('signup')
+	// delete()
+	// {
+	// 	this.userservice.delete_all()
+	// }
 	// test(@User() user: Profile) {
 	// 	return { user };
 	// }
@@ -35,8 +39,8 @@ export class UserController {
 		return this.userservice.get_all_users();
 	}
 
-	@Post('login')
-	login(@Body() loginUserDto: LoginUserDto) {
-		return (this.userservice.login(loginUserDto))
-	}
+	// @Post('login')
+	// login(@Body() loginUserDto: LoginUserDto) {
+	// 	return (this.userservice.login(loginUserDto))
+	// }
 }

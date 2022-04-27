@@ -9,16 +9,15 @@ export class UserHelperService {
 
 	CreatUserDtoEntity(UserDto: CreateUserDto) {
 		return  of( {
-			email: UserDto.email,
-			username: UserDto.username,
-			password: UserDto.password
+			email: UserDto.login,
+			username: UserDto.username
 		})
 	}
 	
 	loginUserDtoToEntity(UserDto: LoginUserDto){
 		return of ({
-			email: UserDto.email,
-			password: UserDto.password
+			email: UserDto.login,
+			password: UserDto.username
 		})
 	}
 }

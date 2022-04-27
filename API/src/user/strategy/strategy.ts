@@ -35,20 +35,29 @@
 // 		return (payload) 
 // 	}
 // }
-import { Injectable, Redirect } from '@nestjs/common';
+import { Inject, Injectable, Redirect } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Strategy, Profile, VerifyCallback } from 'passport-42';
+import { UserEntity } from '../dto/user.entity';
+import { Repository } from 'typeorm';
+import { UserService } from '../user.service';
+import { UserI } from '../dto/user.interface';
 
 @Injectable()
-export class Strategy_42 extends PassportStrategy(Strategy, '42') {
-  constructor(private readonly configService: ConfigService) {
+export class Strategy42 extends PassportStrategy(Strategy, '42') {
+  constructor(
+        private userservice: UserService,
+        private readonly configService: ConfigService,)
+        {
     super({
       clientID: configService.get<string>('FORTYTWO_CLIENT_ID'),
       clientSecret: configService.get<string>('FORTYTWO_CLIENT_SECRET'),
       callbackURL: 'http://10.11.100.84:3000/users/signup',
       passReqToCallback: true,
-    });
+    }
+    );
   }
 
   async validate(
@@ -59,13 +68,18 @@ export class Strategy_42 extends PassportStrategy(Strategy, '42') {
     cb: VerifyCallback,
   ) {
     console.log(profile);
-    request.session.accessToken = accessToken;
+    // request.session.accessToken = accessToken;
     console.log('accessToken', accessToken, 'refreshToken', refreshToken);
     // In this example, the user's 42 profile is supplied as the user
     // record.  In a production-quality application, the 42 profile should
     // be associated with a user record in the application's database, which
     // allows for account linking and authentication with other identity
     // providers.
+    const user:UserI = {
+      login: profile._json.login
+    }
+    this.userservice.create(user);
+
     return cb(null, profile);
     // return (accessToken);
   }
