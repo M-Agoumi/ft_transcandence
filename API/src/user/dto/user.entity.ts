@@ -7,10 +7,10 @@ export class UserEntity {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column()
+	@Column({nullable: true, unique: true})
 	username: string;
 	
-	@Column()
+	@Column({unique: true})
 	login: string;
 	// @Column({ unique: true })
 	// email: string;
