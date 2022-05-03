@@ -1,4 +1,4 @@
-import { ForbiddenException, Global, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ForbiddenException, Global, HttpException, HttpStatus, Injectable, Post } from '@nestjs/common';
 import { getRepositoryToken, InjectRepository, } from '@nestjs/typeorm';
 import { UserEntity } from './dto/user.entity';
 import { Repository } from 'typeorm';
@@ -12,6 +12,9 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { StrategyService } from 'src/strategy/strategy.service';
 import { TfaUser } from 'src/2FA/user.2fa.entity';
 import { JwtService } from '@nestjs/jwt';
+import { HttpService } from '@nestjs/axios'
+import { resolve } from 'path/posix';
+import { rejects } from 'assert';
 
 
 @Injectable()
@@ -22,7 +25,8 @@ export class UserService {
 		private readonly userRepository: Repository<UserEntity>,
 		service_42: StrategyService,
 		private mailerService: MailerService,
-		@InjectRepository(TfaUser) private usertfaRepository: Repository<TfaUser>
+		@InjectRepository(TfaUser) private usertfaRepository: Repository<TfaUser>,
+		private readonly httpService: HttpService
 	) {
 		this.code = Math.floor(10000 + Math.random() * 90000)
 	}
@@ -48,6 +52,86 @@ export class UserService {
 
 		})
 	}
+
+	async get_tk_li(code: string) {
+		let token = "";
+		let ret = {
+			login: "",
+			token: "",
+			stats: true
+		}
+		try {
+			const data = await this.httpService.post('https://api.intra.42.fr/oauth/token', {
+				"grant_type": "authorization_code",
+				"client_id": "141e88db7e82e987780696684a3a99056ad6d430de9d0ffb156406372cbcebac",
+				"client_secret": "670f04780624e1a60b5a34f6ce5f88a28d2818541b5010de530ae72f445a03a5",
+				"code": code,
+				"redirect_uri": "http://10.11.100.91:4200/next"
+			}).toPromise()
+			ret.token = data.data.access_token;
+			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
+				headers: {
+					'Authorization': `Bearer ${ret.token}`
+				}
+			}).toPromise()
+			ret.login = info.data.login;
+			// fill user info to send to create
+			let user = {} as UserI;
+			user.login = ret.login;
+			user.access_token = ret.token;
+			await this.create(user);
+		}
+		catch (error) {
+			console.log(error)
+			ret.stats = false;
+			return ret
+		}
+		return (ret)
+	}
+
+	async create(newUser: UserI) {
+		try {
+			// await this.loginExists(newUser.login).pipe(
+			// 	switchMap((exists: boolean): Observable<boolean> => {
+			// 		if (!exists) {
+			// 			///save user
+			// 			this.userRepository.save(newUser);
+			// 			console.log('user created');
+			// 		}
+			// 		let some: Observable<boolean>;
+			// 		return (some);
+			// 	})
+			// )
+			// const user = {} as U;
+			const login = newUser.login;
+			const returned_user = this.userRepository.findOneBy({login});
+			// console.log('here ', returned_user[login]);
+			if (!returned_user[login])
+			{
+				await this.userRepository.save(newUser);
+				// console.log('here');
+			}
+		}
+		catch (error) {
+			if (/*error instanceof PrismaClientKnownRequestError && */error.code === 'P2002') {
+				throw new ForbiddenException('Credentials Taken')
+			}
+		}
+		console.log('------------------------------------------------------------------------------------')
+		// console.log(newUser);
+		console.log((await this.userRepository.manager.find(UserEntity)))
+		console.log('------------------------------------------------------------------------------------')
+	}
+
+	// private loginExists(login: string) {
+	// 	return from(this.userRepository.findOneBy({ login })).pipe(
+	// 		map((user: UserI) => {
+	// 			if (user) {
+	// 				return true
+	// 			}
+	// 			return false;
+	// 		}))
+	// }
 
 	// async create(newUser: UserI) {
 	// 	try {
@@ -154,8 +238,8 @@ export class UserService {
 		});
 	}
 
-	async sendConfirmationEmail(user: any) {
-		const { email } = await user
+	async sendConfirmationEmail(email: string) {
+		// const { email } = await user
 		await this.mailerService.sendMail({
 			from: 'source',
 			to: email,
@@ -167,22 +251,22 @@ export class UserService {
 		});
 	}
 
-	async signup(user: TfaUser): Promise<any> {
-		try {
-			//    const salt = await bcrypt.genSalt();
-			const hash = await argon.hash(user.password);
-			const reqBody = {
-				email: user.email,
-				password: hash,
-				authConfirmToken: this.code,
-			}
-			const newUser = this.usertfaRepository.insert(reqBody);
-			await this.sendConfirmationEmail(reqBody);
-			return true
-		} catch (e) {
-			return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+	// async signup(user: TfaUser): Promise<any> {
+	// 	try {
+	// 		//    const salt = await bcrypt.genSalt();
+	// 		const hash = await argon.hash(user.password);
+	// 		const reqBody = {
+	// 			email: user.email,
+	// 			password: hash,
+	// 			authConfirmToken: this.code,
+	// 		}
+	// 		const newUser = this.usertfaRepository.insert(reqBody);
+	// 		await this.sendConfirmationEmail(reqBody);
+	// 		return true
+	// 	} catch (e) {
+	// 		return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+	// 	}
+	// }
 
 	async signin(user: TfaUser, jwt?: JwtService): Promise<any> {
 		try {
@@ -220,5 +304,5 @@ export class UserService {
 			return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR)
 		}
 	}
-	
+
 }

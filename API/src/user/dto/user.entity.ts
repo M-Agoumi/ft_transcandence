@@ -15,8 +15,8 @@ export class UserEntity {
 	// @Column({ unique: true })
 	// email: string;
 
-	// @Column(/*{ select: false }*/)
-	// password: string;
+	@Column({ unique: true })
+	access_token: string;
 
 	// @BeforeInsert()
 	// emailToLowerCase() {

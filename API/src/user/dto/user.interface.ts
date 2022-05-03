@@ -6,6 +6,8 @@ export interface UserI {
 	username?: string;
 	
 	login?: string;
+
+	access_token?: string;
 	// email: string;
 
 	// password?: string;
