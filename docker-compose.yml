@@ -1,41 +1,41 @@
 version: "3.8"
 
 services:
-  #our nest back-end
-  api:
-    build:
-      dockerfile: dockerfile
-      context: ./API
-      target: development
-    volumes:
-      - ./API:/src/app
-      - /API/node_modules/
-    command: npm run start:debug
-    depends_on:
-      - postgres
-    environment:
-      DATABASE_URL: postgres://user:password@postgres:5432/db
-      NODE_ENV: development
-      JWT_SECRET: hard_to_guess_secret_123
-      PORT: 3000
-    ports:
-      - 3000:3000
-      - 9229:9229
+  # #our nest back-end
+  # api:
+  #   build:
+  #     dockerfile: dockerfile
+  #     context: ./API
+  #     target: development
+  #   volumes:
+  #     - ./API:/src/app
+  #     - /API/node_modules/
+  #   command: npm run start:debug
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DATABASE_URL: postgres://user:password@postgres:5432/db
+  #     NODE_ENV: development
+  #     JWT_SECRET: hard_to_guess_secret_123
+  #     PORT: 3000
+  #   ports:
+  #     - 3000:3000
+  #     - 9229:9229
 
-  # Our Angular Frontend
-  client:
-    build:
-      dockerfile: dockerfile
-      context: ./client
-      target: development
-    command: npm start
-    volumes:
-      - ./client:/client/src/app
-      - /client/node_modules
-    ports:
-      - 4200:4200
-    links:
-      - api
+  # # Our Angular Frontend
+  # client:
+  #   build:
+  #     dockerfile: dockerfile
+  #     context: ./client
+  #     target: development
+  #   command: npm start
+  #   volumes:
+  #     - ./client:/client/src/app
+  #     - /client/node_modules
+  #   ports:
+  #     - 4200:4200
+  #   links:
+  #     - api
 
   # Our Postgres Database for NestJS to connect to
   postgres:
@@ -49,7 +49,7 @@ services:
 
   # The Postgres Admin tool if we want to run some custom queries and so on against our Database
   postgres_admin:
-    image: dpage/pgadmin4:4.28
+    image: dpage/pgadmin4:latest
     depends_on:
       - postgres
     environment:

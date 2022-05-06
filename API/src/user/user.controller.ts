@@ -16,6 +16,7 @@ import { response } from 'express';
 // import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { HttpService } from '@nestjs/axios'
+import { Stats } from 'fs';
 // import { User } from '@prisma/client'
 
 @Controller('users')
@@ -25,54 +26,71 @@ export class UserController {
 
 	@Get('sendEmail')
 	sendEmail(@Body('email') email: string) {
-		// const user= new TfaUser;
-		// user.email = email
-		// console.log('heew')
-		// console.log(user.email);
 		this.userservice.sendConfirmationEmail(email);
 		return 'done'
 	}
 
 	@Post('signup')
 	hi(@Body('code') code: string) {
-		// this.userservice.get_tk_li(code)
-		// console.log('------------------------------------------------------------------------------------')
-		// console.log(code);
-		// console.log('------------------------------------------------------------------------------------')
 		return (this.userservice.get_tk_li(code))
 	}
 	
-
-	@Post('test')
-	test(@Body() token: any){
-		console.log('------------------------------------------------------------------------------------')
-		console.log(token)
+	@Post('username/:token')
+	async add_user_name(@Body('username') username:string, @Param('token') token: string)
+	{
+		const ret = await this.userservice.check_if_token_valid(token)
+		if (ret.stats === true && await this.userservice.add_username(ret.login, username))
+		{
+			return ({status:'si'});
+		}
+		return ({status:'no'});
 	}
-	// @Post('username/:login')
-	// add_user_name(@Body('username') username:string, @Param('login') login: string)
-	// {
-	// 	this.userservice.add_username(login, username);
-	// }
 
-	// @Get(':login')
-	// getUserData(@Param('login') login: string)
-	// {
-	// 	return (this.userservice.GetUserData(login));
-	// }
-
-	@Get('all')
-	findAll() {
-		// console.log(req.cookies['iariss']); // or "request.cookies['cookieKey']"
-		// console.log(req.signedCookies);
-		// res.cookie('login', 'iariss');
-		console.log('heh')
-		return (this.userservice.get_all_users());
+	@Post('friends/:token')
+	async add_friend(@Body('username') username:string, @Param('token') token: string) {
+		const ret = await this.userservice.check_if_token_valid(token)
+		if (ret.stats === true)
+			return (this.userservice.add_friend(ret.login, username))
+		return ('no');
 	}
-	// delete()
-	// {
-	// 	this.userservice.delete_all()
-	// }
 
+	@Get('friends/:token')
+	async get_friends(@Body('username') username:string, @Param('token') token: string) {
+		const ret = await this.userservice.check_if_token_valid(token)
+		if (ret.stats === true)
+			return (this.userservice.get_friends(ret.login))
+		return ('no');
+	}
+		
+	@Get('all/:token')
+	async findAll(@Param('token') token: string) {
+		const ret = await this.userservice.check_if_token_valid(token)
+		if (ret.stats === true)
+		{
+			return this.userservice.get_all_users()
+		}
+		return ('no');
+	}
+		
+		
+		
+	@Post('delete')
+	delete()
+	{
+		this.userservice.delete_all()
+	}
+		
+	@Post(':username/:token')
+	async get_user_by_username(@Param('username') username:string, @Param('token') token: string)
+	{
+		const ret = await this.userservice.check_if_token_valid(token)
+		if (ret.stats === true)
+		{
+			return await this.userservice.get_user_by_username(username)
+			return ({status:'si'});
+		}
+		return ({status:'no'});
+	}
 	// @Post('login')
 	// login(@Body() loginUserDto: LoginUserDto) {
 	// 	return (this.userservice.login(loginUserDto))

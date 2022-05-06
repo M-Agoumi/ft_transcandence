@@ -1,4 +1,4 @@
-import { Entity, ManyToMany, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, OneToOne} from 'typeorm';
+import { JoinTable, Entity, ManyToMany, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, OneToOne} from 'typeorm';
 import { Match } from './match.entity';
 import { UserStats } from './stats.entity';
 
@@ -27,9 +27,10 @@ export class UserEntity {
     @JoinColumn()
 	userstats: UserStats
 	
-	@ManyToMany(() => UserEntity, {cascade: true})
-    @JoinColumn()
-	friends: UserEntity
+	@ManyToMany(type => UserEntity, (user) => user.friends)
+	@JoinTable({ joinColumn: {} })
+	friends: UserEntity[];
+
 
 	@ManyToMany(() => Match, {cascade: true})
     @JoinColumn()

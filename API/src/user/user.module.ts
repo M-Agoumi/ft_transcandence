@@ -17,7 +17,7 @@ import { TfaUser } from 'src/2FA/user.2fa.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UserStats, Match, TfaUser]),
+    TypeOrmModule.forFeature([UserEntity , UserStats, Match, TfaUser]),
     HttpModule,
     MailerModule.forRoot({
       transport: {
