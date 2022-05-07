@@ -32,6 +32,7 @@ import { JwtModule } from '@nestjs/jwt';
       },
     }),
     JwtModule.register({}),
+    HttpModule
     //may need to import 42module or something
     // synchronize: true,]
 
