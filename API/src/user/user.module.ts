@@ -1,24 +1,23 @@
 import { Module, HttpService } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { UserEntity } from './dto/user.entity';
+import { UserEntity } from './entities/user.entity';
 // import { JtwGuard } from 'src/auth/guard';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UserHelperService } from './user-helper/user-helper.service';
-// import { Strategy42 } from './strategy/strategy';
 import { HttpModule } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config';
-import { UserStats } from './dto/stats.entity';
-import { Match } from './dto/match.entity';
+import { UserStats } from './entities/stats.entity';
+import { Match } from './entities/match.entity';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { StrategyService } from 'src/strategy/strategy.service';
 import { TfaUser } from 'src/2FA/user.2fa.entity';
+import AVatar from './entities/file.entity';
+import { JwtModule } from '@nestjs/jwt';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity , UserStats, Match, TfaUser]),
-    HttpModule,
+    TypeOrmModule.forFeature([UserEntity, UserStats, Match, TfaUser, AVatar]),
     MailerModule.forRoot({
       transport: {
         service: "gmail",
@@ -29,14 +28,15 @@ import { TfaUser } from 'src/2FA/user.2fa.entity';
         }
       },
       defaults: {
-          from: '"No Reply" <ennimizi@gmail.com>'
+        from: '"No Reply" <ennimizi@gmail.com>'
       },
     }),
+    JwtModule.register({}),
     //may need to import 42module or something
-      // synchronize: true,]
-    
+    // synchronize: true,]
+
   ],
   controllers: [UserController],
-  providers: [UserHelperService, StrategyService, ConfigService,UserService],exports:[UserService]
+  providers: [UserHelperService, ConfigService, UserService], exports: [UserService]
 })
 export class UserModule { }

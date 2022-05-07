@@ -5,7 +5,7 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
-  app.enableCors();
+  app.enableCors({credentials:true});
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({  //For the class validator
     whitelist: true,//filters out the elements that are not in our dto
@@ -13,7 +13,7 @@ async function bootstrap() {
   // app.useStaticAssets(join(__dirname, '..', 'public'));
   // app.setBaseViewsDir(join(__dirname, '..', 'views'));
   // app.setViewEngine('hbs');
-  await app.listen(3000);
+  await app.listen(3001);
 }
 
 bootstrap();
