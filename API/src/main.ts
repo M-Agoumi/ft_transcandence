@@ -10,10 +10,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({  //For the class validator
     whitelist: true,//filters out the elements that are not in our dto
   }));
-  // app.useStaticAssets(join(__dirname, '..', 'public'));
-  // app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  // app.setViewEngine('hbs');
-  await app.listen(3001);
+  await app.listen(3000);
 }
 
 bootstrap();

@@ -1,9 +1,35 @@
-import { Body, Controller, Get, Post, Render } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Render, Res, StreamableFile } from '@nestjs/common';
+import { Readable } from 'stream';
 import { TfaUser } from './2FA/user.2fa.entity';
 import { AppService } from './app.service';
+import { UserService } from './user/user.service';
+import { Response } from 'express';
 
-// @Controller('')
-// export class appController {
+@Controller()
+export class appController {
+	constructor(
+		private userservice: UserService
+	){}
+	@Get('/:id')
+	async getDatabaseFilebyId(@Res({passthrough: true}) response: Response, @Param('id', ParseIntPipe) id: number)
+	{
+		
+		console.log('here');
+		// const ret = await this.userservice.check_if_token_valid(token)
+		// if (ret.stats === true)
+		// {
+			const file = await this.userservice.getFileByLogin(id)
+			const stream = Readable.from(file.data)
+			response.set({
+				'Content-Disposition': `inline; filename="${file.filename}"`,
+				'Content-Type': 'image'
+			})
+			return new StreamableFile(stream);
+			// console.log(response)
+		// }
+		// return ({status:'no'});
+	}
+}
 // 	constructor(private appservice: AppService){}
 // 	@Get()
 // 	@Render('index')

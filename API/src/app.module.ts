@@ -18,6 +18,7 @@ import AVatar from './user/entities/file.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './Auth/auth.controller';
 import { AuthModule } from './Auth/auth.module';
+import { appController } from './app.controller';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), TypeOrmModule.forRoot({
@@ -50,7 +51,7 @@ import { AuthModule } from './Auth/auth.module';
     //   },
   }
   )],
-  // controllers: [UserController],
+  controllers: [appController],
   // providers: [UserService],
 })
 export class AppModule { }

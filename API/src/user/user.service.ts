@@ -16,6 +16,7 @@ import { resolve } from 'path/posix';
 import { rejects } from 'assert';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import AVatar from './entities/file.entity';
+import { response } from 'express';
 
 
 @Injectable()
@@ -36,7 +37,11 @@ export class UserService {
 	}
 	async get_all_users() {
 
-		return await this.userRepository.manager.find(UserEntity);
+		return await this.userRepository.find({
+			relations: {
+				friends : true,
+			},
+		});
 	}
 
 	async remove_user(user: LoginUserDto) {
@@ -64,43 +69,44 @@ export class UserService {
 
 	async getFileByLogin(fileId: number)
 	{
-		// const file = await this.avatarRepo.findOneBy({id: fileId});
-		const file = await this.userRepository.findOneBy({login: "iariss"})
+		const file = await this.avatarRepo.findOneBy({id: fileId});
+		// const file = await this.userRepository.findOneBy({login: "rel-hada"})
 		// if (!file)
 		// {
 		// 	return {status : 'avatar not found'}
 		// }
-		return file.avatar
+		return file
 		// const user = await this.userRepository.findOneBy({login})
 		// return (user.avatar.data)
 
 	}
 
-	async addAvatar(Login: string, imageBuffer: Buffer, filename: string)
-	{
-		// console.log('here')
-		const user = await this.userRepository.findOne(
-			{
-				where: {
-					login: Login
-				},
-				relations: {
-					avatar : true,
-				},
+	// async addAvatar(Login: string, imageBuffer: Buffer, filename: string)
+	// {
+	// 	// console.log('here')
+	// 	const user = await this.userRepository.findOne(
+	// 		{
+	// 			where: {
+	// 				login: Login
+	// 			},
+	// 			relations: {
+	// 				avatar : true,
+	// 			},
 				
 				
-			})
-		// console.log('here1')
-		const avatar = await this.uploadDatabaseFile(imageBuffer, filename);
-		// console.log('here2')
-		// await this.userRepository.update(user.login, {
-		// 	avatarId: avatar.id
-		// })
-		user.avatarId = avatar.id;
-		await this.userRepository.save(user)
-		console.log(user.avatar.data, "| => |", user.avatarId)
-		return (avatar)
-	}
+	// 		})
+	// 	// console.log('here1')
+	// 	const avatar = await this.uploadDatabaseFile(imageBuffer, filename);
+	// 	// console.log('here2')
+	// 	// await this.userRepository.update(user.login, {
+	// 	// 	avatarId: avatar.id
+	// 	// })
+	// 	user.avatarId = avatar.id;
+	// 	await this.userRepository.save(user)
+	// 	console.log(user)
+	// 	// console.log(user.avatar.data, "| => |", user.avatarId)
+	// 	return (avatar)
+	// }
 
 
 
@@ -115,10 +121,9 @@ export class UserService {
 	async get_tk_li(code: string) {
 		let token = "";
 		let ret = {
-			token: "",
-			// stats: true,
-			username: "",
-			// friends: []
+			stats: true,
+			login: "",
+			username: ""
 		}
 		try {
 			const data = await this.httpService.post('https://api.intra.42.fr/oauth/token', {
@@ -128,17 +133,18 @@ export class UserService {
 				"code": code,
 				"redirect_uri": "http://10.11.100.91:4200/next"
 			}).toPromise()
-			ret.token = data.data.access_token;
+			const token = data.data.access_token;
+			// console.log(">>>",token)
 			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
 				headers: {
-					'Authorization': `Bearer ${ret.token}`
+					'Authorization': `Bearer ${token}`
 				}
 			}).toPromise()
-			console.log(ret.token)
 			// fill user info to send to create
-			let user = {} as UserEntity;
+			let user = {} as UserI;
 			user.login = info.data.login;
-			user.access_token = ret.token;
+			ret.login = info.data.login
+			// console.log('here is the data',info.data.login)
 			/////moving create
 			try {
 				// const login = newUser.login;
@@ -150,35 +156,41 @@ export class UserService {
 						friends: true,
 					},
 				})
+				// console.log('user here',user)
 				if (!returned_user)
 				{
 					// user.logged_in = true
+					console.log('here')
 					await this.userRepository.save(user);
 					// return ("")
 				}
 				else
 				{
+					// console.log('here2')
+					ret.username = returned_user.username
 					// console.log(user.access_token)
-					returned_user.access_token = user.access_token
+					// returned_user.access_token = user.access_token
 					// for (const k in returned_user.friends) {
 					// 	console.log(returned_user.friends[k])
 					// 	ret.friends.push(returned_user.friends[k].username)
 					// }
-					ret.username = returned_user.username
-					await this.userRepository.save(returned_user);
+					// ret.username = returned_user.username
+					// await this.userRepository.save(returned_user);
 				}
 				// return returned_user.username
 			}
 			catch (error) {
-				console.log('in3l')
+				ret.stats = false;
+				console.log(error)
 			}
 			// ret.username = await this.create(user);
 		}
 		catch (error) {
-			// ret.stats = false;
+			ret.stats = false;
+			console.log('in3l2')
 			return ret
 		}
-		(ret.username === undefined || ret.username === null) ? ret.username = "": 0
+		// (ret.username === undefined || ret.username === null) ? ret.username = "": 0
 		return (ret)
 	}
 
@@ -250,7 +262,7 @@ export class UserService {
 	{
 		const friend = await this.userRepository.findOneBy({ username: friend_username});
 		if (!friend)
-			return {status:'friend not found'}
+			return false
 		const loadedUser = await this.userRepository.findOne({
 			where: {
 				login: login,
@@ -259,35 +271,47 @@ export class UserService {
 				friends: true,
 			},
 		})
-
-		await loadedUser.friends.push(friend)
+		if (friend.login !== loadedUser.login)
+			await loadedUser.friends.push(friend)
 
 		await this.userRepository.save(loadedUser)
-		return {status:'si'}
+		return true
 	}
 
-	async get_friends(login: string)
+	async get_friends(Login: string)
 	{
 		// const returned_user = await this.userRepository.findOneBy({login});
 		const loadedUser = await this.userRepository.findOne({
 			where: {
-				login: login,
+				login: Login,
 			},
 			relations: {
 				friends: true,
 			},
 		})
-		const friends = [];
+		// console.log(loadedUser)
+		const friends :string[] = [];
 		for (const k in loadedUser.friends) {
-			console.log(loadedUser.friends[k])
+			// console.log(loadedUser.friends[k])
 			friends.push(loadedUser.friends[k].username)
 		}
+		// console.log(friends)
 		return friends
 	}
 
-	async get_user_by_username(username: string)
+	async get_user_by_username(userName: string)
 	{
-		return await this.userRepository.findOneBy({username})
+		const user = await this.userRepository.findOne({
+			where: {
+				username: userName
+			}
+		})
+		if (user)
+		{
+			const ret = {username: user.username/*stats and shit later*/}
+			return ret
+		}
+		return {}
 	}
 	
 	// async add_friend(login: string)
@@ -302,12 +326,10 @@ export class UserService {
 		const user_name_check = await this.userRepository.findOneBy({
 			username: newUsername
 		})
-		if (user_name_check && user_name_check.username)
-		{
-			return false
-		}
-		console.log(newUsername)
-		console.log(user.username)
+		// if (user_name_check && user_name_check.username)
+		// {
+		// 	return false
+		// }
 		user.username = newUsername;
 		await this.userRepository.save(user);
 		return true

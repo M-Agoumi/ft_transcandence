@@ -8,14 +8,19 @@ import { userTokenI } from './interface/token.interface'
 @Controller('auth')
 export class AuthController {
 	constructor(private authService: AuthService,
-		// private userservice: UserService
+		private userservice: UserService
 		) {}
 
 	@Post('token')
-	signup(@Body('code') code: string)
+	async signup(@Body('code') code: string)
 	{
-		// const login = this.userservice.get_tk_li(code)
-		// return (this.authService.signup(login))
+		let ret :{ stats: boolean; login: string}
+		let token_username :{ access_token: string; username: string}
+		// let access_token: string = "";
+		ret = await this.userservice.get_tk_li(code)
+		token_username = await this.authService.signToken(ret.login)
+		console.log(token_username)
+		return ({access_token: token_username.access_token, username: token_username.username})
 	}
 	// hi(@Body('code') code: string) {
 	// 	return (this.userservice.get_tk_li(code))

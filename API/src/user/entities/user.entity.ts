@@ -16,13 +16,15 @@ export class UserEntity {
 	// @Column({ unique: true })
 	// email: string;
 
-	@Column({ unique: true })
-	access_token: string;
+	// @Column({ unique: true })
+	// access_token: string;
 
 	// @BeforeInsert()
 	// emailToLowerCase() {
 	// 	this.email = this.email.toLowerCase();
 	// }
+	@Column({nullable: true})
+	imagePath: string
 
 	@OneToOne(() => UserStats, { cascade: true })
 	@JoinColumn()
@@ -32,17 +34,17 @@ export class UserEntity {
 	@JoinTable({ joinColumn: {} })
 	friends: UserEntity[];
 
-	@JoinColumn({ name: 'avatarId' })
-	@OneToOne(
-		() => AVatar,
-		{
-			nullable: true
-		}
-	)
-	public avatar?: AVatar;
+	// @JoinColumn({ name: 'avatarId' })
+	// @OneToOne(
+	// 	() => AVatar,
+	// 	{
+	// 		nullable: true
+	// 	}
+	// )
+	// public avatar?: AVatar;
 
-	@Column({ nullable: true })
-	public avatarId?: number;
+	// @Column({ nullable: true })
+	// public avatarId?: number;
 
 
 	@ManyToMany(() => Match, { cascade: true })
