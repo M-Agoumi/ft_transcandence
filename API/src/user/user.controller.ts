@@ -38,8 +38,8 @@ export class UserController {
 
 	@Get('sendEmail')
 	async sendEmail(@Body('email') email: string) {
-		// console.log(email)
 		await this.userservice.sendMail(email);
+		console.log(email)
 		return 'done'
 	}
 

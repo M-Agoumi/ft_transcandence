@@ -9,23 +9,34 @@ import { HttpModule } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config';
 import { UserStats } from './entities/stats.entity';
 import { Match } from './entities/match.entity';
-import { MailerModule } from '@nestjs-modules/mailer';
+import { MailerModule, MailerService } from '@nestjs-modules/mailer';
 import AVatar from './entities/file.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { matches } from 'class-validator';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
+import { join } from 'path';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, UserStats, matches, AVatar]),
-    MailerModule,
     JwtModule.register({}),
     HttpModule,
-    // MailerModule
-    //may need to import 42module or something
-    // synchronize: true,]
-
+    MailerModule.forRootAsync({
+      useFactory: async (config: ConfigService) => ({
+        transport: {
+            service: 'gmail',
+            secure: false,
+            auth: {
+              type: "OAuth2",
+              user: 'arisssimane@gmail.com',
+            },
+        defaults: {
+            from: `"No Reply" arisssimane@gmail.com`,
+        },
+    }})}),
+    
   ],
   controllers: [UserController],
   providers: [UserHelperService, ConfigService, UserService], exports: [UserService]

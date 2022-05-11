@@ -16,8 +16,8 @@ import { rejects } from 'assert';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import AVatar from './entities/file.entity';
 // import Mail from 'nodemailer';
-import { createTransport } from 'nodemailer';
 import e, { response } from 'express';
+import { createTransport } from 'nodemailer';
 import { google } from 'googleapis';
 
 
@@ -25,7 +25,8 @@ import { google } from 'googleapis';
 @Injectable()
 export class UserService {
 	private code;
-	// private Transport
+	private Transport
+	private access_token
 	constructor(
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,
@@ -34,26 +35,69 @@ export class UserService {
 		@InjectRepository(AVatar)
 		private readonly avatarRepo: Repository<AVatar>,
 		private readonly httpService: HttpService,
-		private readonly mailerService: MailerService
+		private readonly mailerService: MailerService,
 
-	) {
-		// this.Transport = createTransport({
-		// 	service: config.get('EMAIL_SERVICE'),
-		// 	auth: {
-		// 	  user: config.get('EMAIL_USER'),
-		// 	  pass: config.get('EMAIL_PASSWORD'),
-		// 	}
-		//   });
-
-	}
+	) {}
 
 	async sendMail(email: string) {
 		const oauth2Client = new google.auth.OAuth2(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
-		oauth2Client.setCredentials({refresh_token: this.config.get('REFRESH_TOKEN')})
+		oauth2Client.setCredentials({ refresh_token: this.config.get('REFRESH_TOKEN') })
+		this.access_token = oauth2Client.getAccessToken()
+		this.Transport = createTransport({
+			service: 'gmail',
+			auth: {
+				type: "OAuth2",
+				user: 'arisssimane@gmail.com',
+				clientId: this.config.get('CLIENT_ID'),
+				clientSecret: this.config.get('CLIENT_SECRET'),
+				refreshToken: this.config.get('REFRESH_TOKEN'),
+				accessToken: this.access_token
+				
+			}
+		})
+		const mailOptions = {
+			from: 'arisssimane@gmail.com',
+			to: email,
+			subject: "hello mom",
+			text: 'is this working',
+			html: 'is this working'
+		}
+		this.Transport.sendMail(mailOptions)
+		// const result = await this.mailerService.sendMail(mailOptions)
+		// const access_token = await oauth2Client.getAccessToken()
+		// const transport = createTransport({
+		// 	service: 'gmail',
+		// 	auth: {
+		// 		type: "OAuth2",
+		// 		user: 'arisssimane@gmail.com',
+		// 		clientId: this.config.get('CLIENT_ID'),
+		// 		clientSecret: this.config.get('CLIENT_SECRET'),
+		// 		refreshToken: this.config.get('REFRESH_TOKEN'),
+		// 		accessToken: access_token
 
-		const access_token = await oauth2Client.getAccessToken()
-		const transport = MailerService.createTransport({})
+		// 	}
+		// })
 	}
+
+	// public sendVerificationLink(email: string) {
+	// 	const payload: VerificationTokenPayload = { email };
+	// 	const token = this.jwt.sign(payload, {
+	// 	  secret: this.config.get('JWT_VERIFICATION_TOKEN_SECRET'),
+	// 	  expiresIn: `${this.config.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
+	// 	});
+	 
+	// 	const url = `${this.config.get('EMAIL_CONFIRMATION_URL')}?token=${token}`;
+	 
+	// 	const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
+	 
+	// 	return this.emailService.sendMail({
+	// 	  to: email,
+	// 	  subject: 'Email confirmation',
+	// 	  text,
+	// 	})
+	//   }
+
+
 
 	async get_all_users() {
 

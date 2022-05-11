@@ -23,18 +23,16 @@ import { MailerModule } from '@nestjs-modules/mailer';
     database: 'db',
     entities: [UserEntity, UserStats, Match, AVatar],
     synchronize: true,
-  }), UserModule, HttpModule, AuthModule, ConfigModule.forRoot({
+  }), UserModule, HttpModule, AuthModule,
+  ConfigModule.forRoot({
     validationSchema: Joi.object({
       JWT2FA_VERIFICATION_TOKEN_SECRET: Joi.string().required(),
       JWT_VERIFICATION_TOKEN_EXPIRATION_TIME: Joi.string().required(),
       EMAIL_CONFIRMATION_URL: Joi.string().required(),
-      EMAIL_SERVICE: Joi.string().required(),
-      EMAIL_USER: Joi.string().required(),
-      EMAIL_PASSWORD: Joi.string().required(),
       // ...
     }),
-  }),ScheduleModule.forRoot(),
-  MailerModule
+  })
+  // ,ScheduleModule.forRoot(),
 
     // MailerModule.forRoot({
     //   transport: 'smtps://user@domain.com:pass@smtp.domain.com',
