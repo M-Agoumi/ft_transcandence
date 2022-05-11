@@ -10,29 +10,19 @@ import { ConfigService } from '@nestjs/config';
 import { UserStats } from './entities/stats.entity';
 import { Match } from './entities/match.entity';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { TfaUser } from 'src/2FA/user.2fa.entity';
 import AVatar from './entities/file.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { matches } from 'class-validator';
+import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UserStats, Match, TfaUser, AVatar]),
-    MailerModule.forRoot({
-      transport: {
-        service: "gmail",
-        secure: false,
-        auth: {
-          user: 'ennimizi@gmail.com',
-          pass: 'this is a test'
-        }
-      },
-      defaults: {
-        from: '"No Reply" <ennimizi@gmail.com>'
-      },
-    }),
+    TypeOrmModule.forFeature([UserEntity, UserStats, matches, AVatar]),
+    MailerModule,
     JwtModule.register({}),
-    HttpModule
+    HttpModule,
+    // MailerModule
     //may need to import 42module or something
     // synchronize: true,]
 

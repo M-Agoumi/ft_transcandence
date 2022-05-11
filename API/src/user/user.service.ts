@@ -9,37 +9,57 @@ import * as argon from "argon2"
 import { stringify } from 'querystring';
 import { LoginUserDto } from './dto/login-user.dto';
 import { MailerService } from '@nestjs-modules/mailer';
-import { TfaUser } from 'src/2FA/user.2fa.entity';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios'
 import { resolve } from 'path/posix';
 import { rejects } from 'assert';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import AVatar from './entities/file.entity';
-import { response } from 'express';
+// import Mail from 'nodemailer';
+import { createTransport } from 'nodemailer';
+import e, { response } from 'express';
+import { google } from 'googleapis';
+
 
 
 @Injectable()
 export class UserService {
 	private code;
+	// private Transport
 	constructor(
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,
 		private jwt: JwtService,
-		private mailerService: MailerService,
-		@InjectRepository(TfaUser) private usertfaRepository: Repository<TfaUser>,
 		private config: ConfigService,
 		@InjectRepository(AVatar)
 		private readonly avatarRepo: Repository<AVatar>,
 		private readonly httpService: HttpService,
+		private readonly mailerService: MailerService
+
 	) {
-		this.code = Math.floor(10000 + Math.random() * 90000)
+		// this.Transport = createTransport({
+		// 	service: config.get('EMAIL_SERVICE'),
+		// 	auth: {
+		// 	  user: config.get('EMAIL_USER'),
+		// 	  pass: config.get('EMAIL_PASSWORD'),
+		// 	}
+		//   });
+
 	}
+
+	async sendMail(email: string) {
+		const oauth2Client = new google.auth.OAuth2(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
+		oauth2Client.setCredentials({refresh_token: this.config.get('REFRESH_TOKEN')})
+
+		const access_token = await oauth2Client.getAccessToken()
+		const transport = MailerService.createTransport({})
+	}
+
 	async get_all_users() {
 
 		return await this.userRepository.find({
 			relations: {
-				friends : true,
+				friends: true,
 			},
 		});
 	}
@@ -57,8 +77,7 @@ export class UserService {
 
 	/// avatar shit ///
 
-	async uploadDatabaseFile(dataBuffer: Buffer, filename: string)
-	{
+	async uploadDatabaseFile(dataBuffer: Buffer, filename: string) {
 		const newFile = await this.avatarRepo.create({
 			filename,
 			data: dataBuffer
@@ -67,56 +86,56 @@ export class UserService {
 		return newFile
 	}
 
-	async getFileByLogin(fileId: number)
-	{
-		const file = await this.avatarRepo.findOneBy({id: fileId});
+	async getFileByLogin(fileId: number) {
+		const file = await this.avatarRepo.findOneBy({ id: fileId });
 		// const file = await this.userRepository.findOneBy({login: "rel-hada"})
 		// if (!file)
 		// {
 		// 	return {status : 'avatar not found'}
 		// }
 		return file
-		// const user = await this.userRepository.findOneBy({login})
-		// return (user.avatar.data)
 
 	}
 
-	// async addAvatar(Login: string, imageBuffer: Buffer, filename: string)
-	// {
-	// 	// console.log('here')
-	// 	const user = await this.userRepository.findOne(
-	// 		{
-	// 			where: {
-	// 				login: Login
-	// 			},
-	// 			relations: {
-	// 				avatar : true,
-	// 			},
-				
-				
-	// 		})
-	// 	// console.log('here1')
-	// 	const avatar = await this.uploadDatabaseFile(imageBuffer, filename);
-	// 	// console.log('here2')
-	// 	// await this.userRepository.update(user.login, {
-	// 	// 	avatarId: avatar.id
+
+	// async sendEmail(email: string) {
+	// 	// await this.mailerService.sendMail({
+	// 	// 	to: email,
+	// 	// 	subject: 'A test email',
+
 	// 	// })
-	// 	user.avatarId = avatar.id;
-	// 	await this.userRepository.save(user)
-	// 	console.log(user)
-	// 	// console.log(user.avatar.data, "| => |", user.avatarId)
-	// 	return (avatar)
+	// 	// console.log(email)
+	// 	try{
+
+	// 		// let testAccount = await nodemailer.createTestAccount()
+	// 		// let transporter = await nodemailer.createTransport({
+	// 		// 	// service: 'Gmail',
+	// 		// 	host: "smtp.ethereal.email",
+	// 		// 	port: 2525,
+	// 		// 	secure: false, // true for 465, false for other ports
+	// 		// 	auth: {
+	// 		// 	  user: testAccount.user, // generated ethereal user
+	// 		// 	  pass: testAccount.pass, // generated ethereal password
+	// 		// 	},
+	// 		//   });
+
+	// 		  // send mail with defined transport object
+	// 		  console.log('123')
+	// 		  let info = await this.mailerService.sendMail({
+	// 			from: '"Fred Foo 👻" <foo@example.com>', // sender address
+	// 			to: email, // list of receivers
+	// 			subject: "Hello ✔", // Subject line
+	// 			text: "Hello world?", // plain text body
+	// 			html: "<b>Hello world?</b>", // html body
+	// 		  });
+	// 		  console.log('123')
+	// 	}
+	// 	catch(err)
+	// 	{
+	// 		console.log(err)
+	// 	}
+
 	// }
-
-
-
-	async sendEmail(email: string) {
-		await this.mailerService.sendMail({
-			to: email,
-			subject: 'A test email',
-
-		})
-	}
 
 	async get_tk_li(code: string) {
 		let token = "";
@@ -157,15 +176,13 @@ export class UserService {
 					},
 				})
 				// console.log('user here',user)
-				if (!returned_user)
-				{
+				if (!returned_user) {
 					// user.logged_in = true
 					console.log('here')
 					await this.userRepository.save(user);
 					// return ("")
 				}
-				else
-				{
+				else {
 					// console.log('here2')
 					ret.username = returned_user.username
 					// console.log(user.access_token)
@@ -194,8 +211,7 @@ export class UserService {
 		return (ret)
 	}
 
-	async check_if_token_valid(token: string)
-	{
+	async check_if_token_valid(token: string) {
 		let ret = {
 			login: "",
 			token: "",
@@ -215,8 +231,7 @@ export class UserService {
 			console.log(ret.token)
 			ret.stats = true
 		}
-		catch(error)
-		{
+		catch (error) {
 			// console.log(error)
 			ret.stats = false
 			return ret
@@ -224,43 +239,9 @@ export class UserService {
 		return (ret)
 	}
 
-	// async create(newUser: UserI) {
-	// 	try {
-	// 		// const login = newUser.login;
-	// 		const returned_user = await this.userRepository.findOne({
-	// 			where: {
-	// 				login: newUser.login
-	// 			},
-	// 			relations: {
-	// 				friends: true,
-	// 			},
-	// 		})
-	// 		if (!returned_user)
-	// 		{
-	// 			newUser.logged_in = true
-	// 			await this.userRepository.save(newUser);
-	// 			return ("")
-	// 		}
-	// 		else
-	// 		{
-	// 			console.log(newUser.access_token)
-	// 			returned_user.access_token = newUser.access_token
-	// 			await this.userRepository.save(returned_user);
-	// 		}
-	// 		return returned_user.username
-	// 	}
-	// 	catch (error) {
-	// 		console.log('in3l')
-	// 	}
-	// 	console.log('------------------------------------------------------------------------------------')
-	// 	console.log('here 1',(await this.userRepository.manager.find(UserEntity)))
-	// 	console.log('------------------------------------------------------------------------------------')
-	// }
 
-
-	async add_friend(login: string, friend_username:string)
-	{
-		const friend = await this.userRepository.findOneBy({ username: friend_username});
+	async add_friend(login: string, friend_username: string) {
+		const friend = await this.userRepository.findOneBy({ username: friend_username });
 		if (!friend)
 			return false
 		const loadedUser = await this.userRepository.findOne({
@@ -278,8 +259,7 @@ export class UserService {
 		return true
 	}
 
-	async get_friends(Login: string)
-	{
+	async get_friends(Login: string) {
 		// const returned_user = await this.userRepository.findOneBy({login});
 		const loadedUser = await this.userRepository.findOne({
 			where: {
@@ -290,7 +270,7 @@ export class UserService {
 			},
 		})
 		// console.log(loadedUser)
-		const friends :string[] = [];
+		const friends: string[] = [];
 		for (const k in loadedUser.friends) {
 			// console.log(loadedUser.friends[k])
 			friends.push(loadedUser.friends[k].username)
@@ -299,21 +279,19 @@ export class UserService {
 		return friends
 	}
 
-	async get_user_by_username(userName: string)
-	{
+	async get_user_by_username(userName: string) {
 		const user = await this.userRepository.findOne({
 			where: {
 				username: userName
 			}
 		})
-		if (user)
-		{
-			const ret = {username: user.username/*stats and shit later*/}
+		if (user) {
+			const ret = { username: user.username/*stats and shit later*/ }
 			return ret
 		}
 		return {}
 	}
-	
+
 	// async add_friend(login: string)
 	// {
 
@@ -346,66 +324,73 @@ export class UserService {
 		console.log('deleted');
 	}
 
-	async sendConfirmedEmail(user: TfaUser) {
-		const { email } = user
-		await this.mailerService.sendMail({
-			to: email,
-			subject: 'Welcome to Nice App! Email Confirmed',
-			template: 'confirmed',
-			context: {
-				email
-			},
-		});
-	}
+	// async sendConfirmedEmail(email: string) {
+	// 	try {
+	// 		// const { email } = user
+	// 		await this.mailerService.sendMail({
+	// 			to: email,
+	// 			from: 'noreply@nestjs.com',
+	// 			subject: 'Welcome to Nice App! Email Confirmed',
+	// 			text: 'welcom666',
+	// 			// template: 'confirmed',
+	// 			// context: {
+	// 			// 	email
+	// 			// },
+	// 		});
+	// 	}
+	// 	catch (err) {
+	// 		console.log(err)
+	// 	}
+	// }
 
-	async sendConfirmationEmail(email: string) {
-		// const { email } = await user
-		await this.mailerService.sendMail({
-			from: 'source',
-			to: email,
-			subject: 'Welcome to Nice App! Confirm Email',
-			template: 'confirm',
-			context: {
-				code: this.code
-			},
-		});
-	}
+	// async sendConfirmationEmail(email: string) {
+	// 	// const { email } = await user
+	// 	await this.mailerService.sendMail({
+	// 		from: 'source',
+	// 		to: email,
+	// 		subject: 'Welcome to Nice App! Confirm Email',
+	// 		template: 'confirm',
+	// 		context: {
+	// 			code: this.code
+	// 		},
+	// 	});
+	// }
 
-	async signin(user: TfaUser, jwt?: JwtService): Promise<any> {
-		try {
-			const foundUser = await this.usertfaRepository.findOneBy({ email: user.email });
-			if (foundUser) {
-				if (foundUser.isVerified) {
-					if (argon.verify(user.password, foundUser.password)) {
-						const payload = { email: user.email };
-						return {
-							token: jwt.sign(payload),
-						};
-					}
-				} else {
-					return new HttpException('Please verify your account', HttpStatus.UNAUTHORIZED)
-				}
-				return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
-			}
-			return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
-		} catch (e) {
-			return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+	// async signin(user: TfaUser, jwt?: JwtService): Promise<any> {
+	// 	try {
+	// 		const foundUser = await this.usertfaRepository.findOneBy({ email: user.email });
+	// 		if (foundUser) {
+	// 			if (foundUser.isVerified) {
+	// 				if (argon.verify(user.password, foundUser.password)) {
+	// 					const payload = { email: user.email };
+	// 					return {
+	// 						token: jwt.sign(payload),
+	// 					};
+	// 				}
+	// 			} else {
+	// 				return new HttpException('Please verify your account', HttpStatus.UNAUTHORIZED)
+	// 			}
+	// 			return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
+	// 		}
+	// 		return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
+	// 	} catch (e) {
+	// 		return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+	// 	}
+	// }
 
-	async verifyAccount(code: string): Promise<any> {
-		try {
-			const user = await this.usertfaRepository.findOneBy({ authConfirmToken: code });
-			if (!user) {
-				return new HttpException('Verification code has expired or not found', HttpStatus.UNAUTHORIZED)
-			}
-			await this.usertfaRepository.update({ authConfirmToken: user.authConfirmToken }, { isVerified: true, authConfirmToken: undefined })
-			await this.sendConfirmedEmail(user)
-			return true
-		}
-		catch (e) {
-			return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR)
-		}
-	}
+	// async verifyAccount(code: string): Promise<any> {
+	// 	try {
+	// 		const user = await this.usertfaRepository.findOneBy({ authConfirmToken: code });
+	// 		if (!user) {
+	// 			return new HttpException('Verification code has expired or not found', HttpStatus.UNAUTHORIZED)
+	// 		}
+	// 		await this.usertfaRepository.update({ authConfirmToken: user.authConfirmToken }, { isVerified: true, authConfirmToken: undefined })
+	// 		await this.sendConfirmedEmail(user)
+	// 		return true
+	// 	}
+	// 	catch (e) {
+	// 		return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR)
+	// 	}
+	// }
 
 }

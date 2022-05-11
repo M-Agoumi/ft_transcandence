@@ -34,6 +34,9 @@ export class UserEntity {
 	@JoinTable({ joinColumn: {} })
 	friends: UserEntity[];
 
+	@Column({ default: false })
+ 	public isEmailConfirmed: boolean;
+
 	// @JoinColumn({ name: 'avatarId' })
 	// @OneToOne(
 	// 	() => AVatar,

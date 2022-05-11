@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Render, Res, StreamableFile } from '@nestjs/common';
 import { Readable } from 'stream';
-import { TfaUser } from './2FA/user.2fa.entity';
 import { AppService } from './app.service';
 import { UserService } from './user/user.service';
 import { Response } from 'express';

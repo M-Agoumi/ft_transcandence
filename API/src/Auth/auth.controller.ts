@@ -1,5 +1,7 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/user/decorators';
 import { UserI } from 'src/user/dto/user.interface';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
@@ -22,6 +24,24 @@ export class AuthController {
 		console.log(token_username)
 		return ({access_token: token_username.access_token, username: token_username.username})
 	}
+
+	@Get()
+	@UseGuards(AuthGuard('google'))
+	async googleAuth(@GetUser() user)
+	{
+
+	}
+
+
+	@Get('/google/callback')
+	@UseGuards(AuthGuard('google'))
+	googleAuthRedirect(@GetUser() user)
+	{
+		if (!user)
+			return ('no user')
+		return ({message: 'user found', user})
+	}
+
 	// hi(@Body('code') code: string) {
 	// 	return (this.userservice.get_tk_li(code))
 	// }

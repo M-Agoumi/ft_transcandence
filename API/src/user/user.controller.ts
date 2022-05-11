@@ -10,7 +10,6 @@ import { Profile } from 'passport';
 import { My_guard } from './guard/guard';
 // import { LocalStorage } from 'node-localstorage' 
 import { LocalStorage } from "node-localstorage";
-import { TfaUser } from 'src/2FA/user.2fa.entity';
 import { response } from 'express';
 
 // import { AuthGuard } from '@nestjs/passport';
@@ -38,8 +37,9 @@ export class UserController {
 
 
 	@Get('sendEmail')
-	sendEmail(@Body('email') email: string) {
-		this.userservice.sendConfirmationEmail(email);
+	async sendEmail(@Body('email') email: string) {
+		// console.log(email)
+		await this.userservice.sendMail(email);
 		return 'done'
 	}
 
@@ -66,7 +66,10 @@ export class UserController {
 	async get_user_name(@GetUser() user: any)
 	{
 		if (user.username)
+		{
+			console.log(user)
 			return {username:user.username}
+		}
 		else
 			return {username: undefined}
 	}
@@ -98,9 +101,6 @@ export class UserController {
 	@UseInterceptors(FileInterceptor('file', {storage: diskStorage({
 		destination: './uploads/profileImages',
 		filename: (req, file, cb) => {
-			// const filename : string = path.parse(file.originalname).name.replace(/\s/g, '') + uuidv4()
-			// const extention: string = path.parse(file.originalname).ext
-
 			cb(null, `${file.originalname}`)
 		}
 	})}))
@@ -114,7 +114,7 @@ export class UserController {
 		// console.log(user)
 		// }
 		// return ({status:'no'});
-		console.log(file)
+		// console.log(file)
 		user.imagePath = file.path;
 		this.userRepository.save(user);
 		return of({imagePath: file.path})

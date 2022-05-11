@@ -1,8 +1,7 @@
 import { HttpModule, HttpService, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TfaUser } from 'src/2FA/user.2fa.entity';
-import { JwtStrategy } from 'src/strategy/jwt.strategy';
+import { JwtStrategy } from 'src/strategies/jwt.strategy';
 import AVatar from 'src/user/entities/file.entity';
 import { Match } from 'src/user/entities/match.entity';
 import { UserStats } from 'src/user/entities/stats.entity';
@@ -13,7 +12,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 @Module({
-  imports: [JwtModule.register({}), TypeOrmModule.forFeature([UserEntity, UserStats, Match, TfaUser, AVatar]),UserModule],
+  imports: [JwtModule.register({}), TypeOrmModule.forFeature([UserEntity, UserStats, Match, AVatar]),UserModule],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
 })

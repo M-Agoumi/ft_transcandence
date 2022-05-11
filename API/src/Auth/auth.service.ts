@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from 'src/user/entities/user.entity';
 import * as argon from "argon2"
+import { authenticator } from 'otplib';
 
 @Injectable()
 export class AuthService {
@@ -41,4 +42,11 @@ export class AuthService {
 			username = user.username
 		return {access_token: token, username}
 	}
+
+	///////////2FA/////////
+	
+
+
+
+
 }
