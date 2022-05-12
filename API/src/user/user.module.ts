@@ -16,27 +16,30 @@ import { matches } from 'class-validator';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 import { join } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { Convo } from './entities/conversation.entity';
+import { Message } from './entities/message.entity';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UserStats, matches, AVatar]),
+    TypeOrmModule.forFeature([Convo, UserEntity, UserStats, matches, AVatar, Message]),
     JwtModule.register({}),
     HttpModule,
     MailerModule.forRootAsync({
       useFactory: async (config: ConfigService) => ({
         transport: {
-            service: 'gmail',
-            secure: false,
-            auth: {
-              type: "OAuth2",
-              user: 'arisssimane@gmail.com',
-            },
-        defaults: {
+          service: 'gmail',
+          auth: {
+            type: "OAuth2",
+            user: 'arisssimane@gmail.com',
+          },
+          defaults: {
             from: `"No Reply" arisssimane@gmail.com`,
-        },
-    }})}),
-    
+          },
+        }
+      })
+    }),
+
   ],
   controllers: [UserController],
   providers: [UserHelperService, ConfigService, UserService], exports: [UserService]

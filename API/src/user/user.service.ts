@@ -1,22 +1,14 @@
-import { ForbiddenException, Global, HttpException, HttpStatus, Injectable, Post } from '@nestjs/common';
-import { getConnectionName, getRepositoryToken, InjectRepository, } from '@nestjs/typeorm';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository, } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserI } from './dto/user.interface';
-import { from, map, Observable, switchMap } from 'rxjs';
-import { bcrypt } from 'bcryptjs';
-import * as argon from "argon2"
-import { stringify } from 'querystring';
 import { LoginUserDto } from './dto/login-user.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios'
-import { resolve } from 'path/posix';
-import { rejects } from 'assert';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import AVatar from './entities/file.entity';
-// import Mail from 'nodemailer';
-import e, { response } from 'express';
 import { createTransport } from 'nodemailer';
 import { google } from 'googleapis';
 
@@ -39,7 +31,7 @@ export class UserService {
 
 	) {}
 
-	async sendMail(email: string) {
+	async sendMail(mailOptions: any) {
 		const oauth2Client = new google.auth.OAuth2(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
 		oauth2Client.setCredentials({ refresh_token: this.config.get('REFRESH_TOKEN') })
 		this.access_token = oauth2Client.getAccessToken()
@@ -55,48 +47,55 @@ export class UserService {
 				
 			}
 		})
-		const mailOptions = {
-			from: 'arisssimane@gmail.com',
-			to: email,
-			subject: "hello mom",
-			text: 'is this working',
-			html: 'is this working'
-		}
 		this.Transport.sendMail(mailOptions)
-		// const result = await this.mailerService.sendMail(mailOptions)
-		// const access_token = await oauth2Client.getAccessToken()
-		// const transport = createTransport({
-		// 	service: 'gmail',
-		// 	auth: {
-		// 		type: "OAuth2",
-		// 		user: 'arisssimane@gmail.com',
-		// 		clientId: this.config.get('CLIENT_ID'),
-		// 		clientSecret: this.config.get('CLIENT_SECRET'),
-		// 		refreshToken: this.config.get('REFRESH_TOKEN'),
-		// 		accessToken: access_token
-
-		// 	}
-		// })
 	}
 
-	// public sendVerificationLink(email: string) {
-	// 	const payload: VerificationTokenPayload = { email };
-	// 	const token = this.jwt.sign(payload, {
-	// 	  secret: this.config.get('JWT_VERIFICATION_TOKEN_SECRET'),
-	// 	  expiresIn: `${this.config.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
-	// 	});
-	 
-	// 	const url = `${this.config.get('EMAIL_CONFIRMATION_URL')}?token=${token}`;
-	 
-	// 	const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
-	 
-	// 	return this.emailService.sendMail({
-	// 	  to: email,
-	// 	  subject: 'Email confirmation',
-	// 	  text,
-	// 	})
-	//   }
+	sendVerificationLink(Email: string, username:string) {
+		const payload : { email: string} =  { email: Email };
+		const token = this.jwt.sign(payload, {
+			secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
+			expiresIn: `${this.config.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
+		});
+		
+		const url = `${this.config.get('EMAIL_CONFIRMATION_URL')}?token=${token}`;
+		
+		const text = `Welcome to Ping Pong. To confirm the email address, click here: ${url}`;
+		
+		return this.sendMail({
+			to: Email,
+			subject: 'Email confirmation',
+			text,
+	})
+	}
 
+	async confirmEmail( Email: string) {
+		const user = await this.userRepository.findOneBy({email:Email});
+		if (user.isEmailConfirmed) {
+			console.log('email already confirmed')
+			return({status: 'already confirmed'});
+		}
+		user.isEmailConfirmed = true
+		this.userRepository.save(user)
+		return ({status: 'si'})
+	}
+
+	async decodeConfirmationToken(token: string) {
+		try {
+		  const payload = await this.jwt.verify(token, {
+			secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
+		  });
+	 
+		  if (typeof payload === 'object' && 'email' in payload) {
+			return payload.email;
+		  }
+		  console.log('error')
+		} catch (error) {
+		  if (error?.name === 'TokenExpiredError') {
+			console.log('token expired')
+		  }
+		  console.log('error2')
+		}
+	  }
 
 
 	async get_all_users() {
@@ -141,52 +140,21 @@ export class UserService {
 
 	}
 
-
-	// async sendEmail(email: string) {
-	// 	// await this.mailerService.sendMail({
-	// 	// 	to: email,
-	// 	// 	subject: 'A test email',
-
-	// 	// })
-	// 	// console.log(email)
-	// 	try{
-
-	// 		// let testAccount = await nodemailer.createTestAccount()
-	// 		// let transporter = await nodemailer.createTransport({
-	// 		// 	// service: 'Gmail',
-	// 		// 	host: "smtp.ethereal.email",
-	// 		// 	port: 2525,
-	// 		// 	secure: false, // true for 465, false for other ports
-	// 		// 	auth: {
-	// 		// 	  user: testAccount.user, // generated ethereal user
-	// 		// 	  pass: testAccount.pass, // generated ethereal password
-	// 		// 	},
-	// 		//   });
-
-	// 		  // send mail with defined transport object
-	// 		  console.log('123')
-	// 		  let info = await this.mailerService.sendMail({
-	// 			from: '"Fred Foo 👻" <foo@example.com>', // sender address
-	// 			to: email, // list of receivers
-	// 			subject: "Hello ✔", // Subject line
-	// 			text: "Hello world?", // plain text body
-	// 			html: "<b>Hello world?</b>", // html body
-	// 		  });
-	// 		  console.log('123')
-	// 	}
-	// 	catch(err)
-	// 	{
-	// 		console.log(err)
-	// 	}
-
-	// }
+	async activateTwoFa(Login: string, Email:string)
+	{
+		const user = await this.userRepository.findOneBy({login: Login})
+		user.email = Email;
+		user.twoFaActivated = true;
+		this.userRepository.save(user)
+	}
 
 	async get_tk_li(code: string) {
 		let token = "";
 		let ret = {
 			stats: true,
 			login: "",
-			username: ""
+			username: "",
+			twoFa: false
 		}
 		try {
 			const data = await this.httpService.post('https://api.intra.42.fr/oauth/token', {
@@ -229,6 +197,7 @@ export class UserService {
 				else {
 					// console.log('here2')
 					ret.username = returned_user.username
+					ret.twoFa = returned_user.twoFaActivated
 					// console.log(user.access_token)
 					// returned_user.access_token = user.access_token
 					// for (const k in returned_user.friends) {
@@ -366,6 +335,11 @@ export class UserService {
 	async delete_all() {
 		this.userRepository.clear();
 		console.log('deleted');
+	}
+
+	async get_history(userName: string)
+	{
+		const user = this.userRepository.findOneBy({username:userName})
 	}
 
 	// async sendConfirmedEmail(email: string) {

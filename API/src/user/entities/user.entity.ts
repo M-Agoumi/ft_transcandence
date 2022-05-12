@@ -1,7 +1,8 @@
-import { JoinTable, Entity, ManyToMany, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, OneToOne } from 'typeorm';
+import { OneToMany, ManyToOne, JoinTable, Entity, ManyToMany, PrimaryGeneratedColumn, Column, JoinColumn, OneToOne } from 'typeorm';
 import AVatar from './file.entity';
 import { Match } from './match.entity';
 import { UserStats } from './stats.entity';
+import { Convo } from './conversation.entity';
 
 @Entity()
 export class UserEntity {
@@ -13,17 +14,14 @@ export class UserEntity {
 
 	@Column({ unique: true })
 	login: string;
-	// @Column({ unique: true })
-	// email: string;
 
-	// @Column({ unique: true })
-	// access_token: string;
+	@Column({ unique: true, nullable: true})
+	email: string;
+	
+	@Column({ unique: true, nullable: true, default: false})
+	twoFaActivated: boolean;
 
-	// @BeforeInsert()
-	// emailToLowerCase() {
-	// 	this.email = this.email.toLowerCase();
-	// }
-	@Column({nullable: true})
+	@Column({ default: "uploads/profileImages/Screen Shot 2022-03-24 at 5.20.58 PM.png"})
 	imagePath: string
 
 	@OneToOne(() => UserStats, { cascade: true })
@@ -35,28 +33,14 @@ export class UserEntity {
 	friends: UserEntity[];
 
 	@Column({ default: false })
- 	public isEmailConfirmed: boolean;
-
-	// @JoinColumn({ name: 'avatarId' })
-	// @OneToOne(
-	// 	() => AVatar,
-	// 	{
-	// 		nullable: true
-	// 	}
-	// )
-	// public avatar?: AVatar;
-
-	// @Column({ nullable: true })
-	// public avatarId?: number;
+ 	isEmailConfirmed: boolean;
 
 
-	@ManyToMany(() => Match, { cascade: true })
-	@JoinColumn()
-	history: Match
+	@OneToMany(() => Match, (history) => history.player1)
+	history: Match[]
 
-	// @OneToMany(() => Match, {cascade: true})
-	// @JoinColumn()
-	// history: Match
+	// @ManyToOne(() => Convo, (convo) => convo.administrators)
+	// convo: Convo
 
 
 }

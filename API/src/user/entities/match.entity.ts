@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from 'typeorm';
+import { ManyToOne, Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from 'typeorm';
 import { UserEntity } from './user.entity'
 
 @Entity()
@@ -21,6 +21,8 @@ export class Match {
 	@Column()
 	streak: number;
 
+	@ManyToOne(() => UserEntity, (user) => user.history)
+	user: UserEntity
 
 	// @OneToOne(() => UserEntity)
     // @JoinColumn()

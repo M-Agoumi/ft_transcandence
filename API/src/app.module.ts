@@ -12,6 +12,8 @@ import { appController } from './app.controller';
 import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { Convo } from './user/entities/conversation.entity';
+import { Message } from './user/entities/message.entity';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), TypeOrmModule.forRoot({
@@ -21,17 +23,17 @@ import { MailerModule } from '@nestjs-modules/mailer';
     username: 'user',
     password: 'password',
     database: 'db',
-    entities: [UserEntity, UserStats, Match, AVatar],
+    entities: [UserEntity, UserStats, Match, AVatar, Convo ,Message],
     synchronize: true,
   }), UserModule, HttpModule, AuthModule,
-  ConfigModule.forRoot({
-    validationSchema: Joi.object({
-      JWT2FA_VERIFICATION_TOKEN_SECRET: Joi.string().required(),
-      JWT_VERIFICATION_TOKEN_EXPIRATION_TIME: Joi.string().required(),
-      EMAIL_CONFIRMATION_URL: Joi.string().required(),
-      // ...
-    }),
-  })
+  // ConfigModule.forRoot({
+  //   validationSchema: Joi.object({
+  //     JWT2FA_VERIFICATION_TOKEN_SECRET: Joi.string().required(),
+  //     JWT_VERIFICATION_TOKEN_EXPIRATION_TIME: Joi.string().required(),
+  //     EMAIL_CONFIRMATION_URL: Joi.string().required(),
+  //     // ...
+  //   }),
+  // })
   // ,ScheduleModule.forRoot(),
 
     // MailerModule.forRoot({
