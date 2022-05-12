@@ -16,7 +16,7 @@ export class AuthController {
 	@Post('token')
 	async signup(@Body('code') code: string)
 	{
-		let ret :{ stats: boolean; login: string}
+		let ret :{ stats: boolean; login: string, twoFa:boolean}
 		let token_username :{ access_token: string; username: string}
 		// let access_token: string = "";
 		ret = await this.userservice.get_tk_li(code)
@@ -24,26 +24,5 @@ export class AuthController {
 		console.log(token_username)
 		return ({access_token: token_username.access_token, username: token_username.username})
 	}
-
-	@Get()
-	@UseGuards(AuthGuard('google'))
-	async googleAuth(@GetUser() user)
-	{
-
-	}
-
-
-	@Get('/google/callback')
-	@UseGuards(AuthGuard('google'))
-	googleAuthRedirect(@GetUser() user)
-	{
-		if (!user)
-			return ('no user')
-		return ({message: 'user found', user})
-	}
-
-	// hi(@Body('code') code: string) {
-	// 	return (this.userservice.get_tk_li(code))
-	// }
 	
 }

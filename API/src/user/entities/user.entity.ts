@@ -18,7 +18,7 @@ export class UserEntity {
 	@Column({ unique: true, nullable: true})
 	email: string;
 	
-	@Column({ unique: true, nullable: true, default: false})
+	@Column({ nullable: true, default: false})
 	twoFaActivated: boolean;
 
 	@Column({ default: "uploads/profileImages/Screen Shot 2022-03-24 at 5.20.58 PM.png"})
@@ -39,8 +39,8 @@ export class UserEntity {
 	@OneToMany(() => Match, (history) => history.player1)
 	history: Match[]
 
-	// @ManyToOne(() => Convo, (convo) => convo.administrators)
-	// convo: Convo
+	@ManyToOne(() => Convo, (convo) => convo.administrators)
+	convo: Convo
 
 
 }
