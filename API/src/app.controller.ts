@@ -17,7 +17,7 @@ export class appController {
 		// const ret = await this.userservice.check_if_token_valid(token)
 		// if (ret.stats === true)
 		// {
-			const file = await this.userservice.getFileByLogin(id)
+			const file = await this.userservice.getFileById(id)
 			const stream = Readable.from(file.data)
 			response.set({
 				'Content-Disposition': `inline; filename="${file.filename}"`,

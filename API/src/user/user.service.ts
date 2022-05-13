@@ -29,7 +29,28 @@ export class UserService {
 		private readonly httpService: HttpService,
 		private readonly mailerService: MailerService,
 
-	) {}
+	) { }
+
+	async enableTwoFa(email: string, userName: string) {
+		const user = await this.userRepository.findOneBy({ username: userName })
+		if (!user)
+			return (false)
+		console.log(user)
+		user.email = email
+		user.twoFaActivated = true
+		await this.userRepository.save(user)
+		console.log(email)
+		return (true)
+	}
+
+	async disableTwoFa(userName: string) {
+		const user = await this.userRepository.findOneBy({ username: userName })
+		if (!user)
+			return (false)
+		user.twoFaActivated = false
+		await this.userRepository.save(user)
+		return (true)
+	}
 
 	async sendMail(mailOptions: any) {
 		const oauth2Client = new google.auth.OAuth2(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
@@ -44,58 +65,58 @@ export class UserService {
 				clientSecret: this.config.get('CLIENT_SECRET'),
 				refreshToken: this.config.get('REFRESH_TOKEN'),
 				accessToken: this.access_token
-				
+
 			}
 		})
 		this.Transport.sendMail(mailOptions)
 	}
 
-	sendVerificationLink(Email: string, username:string) {
-		const payload : { email: string} =  { email: Email };
+	sendVerificationLink(Email: string, username: string) {
+		const payload: { email: string } = { email: Email };
 		const token = this.jwt.sign(payload, {
 			secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
 			expiresIn: `${this.config.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
 		});
-		
+
 		const url = `${this.config.get('EMAIL_CONFIRMATION_URL')}?token=${token}`;
-		
+
 		const text = `Welcome to Ping Pong. To confirm the email address, click here: ${url}`;
-		
+
 		return this.sendMail({
 			to: Email,
 			subject: 'Email confirmation',
 			text,
-	})
+		})
 	}
 
-	async confirmEmail( Email: string) {
-		const user = await this.userRepository.findOneBy({email:Email});
+	async confirmEmail(Email: string) {
+		const user = await this.userRepository.findOneBy({ email: Email });
 		if (user.isEmailConfirmed) {
 			console.log('email already confirmed')
-			return({status: 'already confirmed'});
+			return ({ status: 'already confirmed' });
 		}
 		user.isEmailConfirmed = true
 		this.userRepository.save(user)
-		return ({status: 'si'})
+		return ({ status: 'si' })
 	}
 
 	async decodeConfirmationToken(token: string) {
 		try {
-		  const payload = await this.jwt.verify(token, {
-			secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
-		  });
-	 
-		  if (typeof payload === 'object' && 'email' in payload) {
-			return payload.email;
-		  }
-		  console.log('error')
+			const payload = await this.jwt.verify(token, {
+				secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
+			});
+
+			if (typeof payload === 'object' && 'email' in payload) {
+				return payload.email;
+			}
+			console.log('error')
 		} catch (error) {
-		  if (error?.name === 'TokenExpiredError') {
-			console.log('token expired')
-		  }
-		  console.log('error2')
+			if (error?.name === 'TokenExpiredError') {
+				console.log('token expired')
+			}
+			console.log('error2')
 		}
-	  }
+	}
 
 
 	async get_all_users() {
@@ -129,20 +150,14 @@ export class UserService {
 		return newFile
 	}
 
-	async getFileByLogin(fileId: number) {
+	async getFileById(fileId: number) {
 		const file = await this.avatarRepo.findOneBy({ id: fileId });
-		// const file = await this.userRepository.findOneBy({login: "rel-hada"})
-		// if (!file)
-		// {
-		// 	return {status : 'avatar not found'}
-		// }
 		return file
 
 	}
 
-	async activateTwoFa(Login: string, Email:string)
-	{
-		const user = await this.userRepository.findOneBy({login: Login})
+	async activateTwoFa(Login: string, Email: string) {
+		const user = await this.userRepository.findOneBy({ login: Login })
 		user.email = Email;
 		user.twoFaActivated = true;
 		this.userRepository.save(user)
@@ -337,78 +352,19 @@ export class UserService {
 		console.log('deleted');
 	}
 
-	async get_history(userName: string)
-	{
-		const user = this.userRepository.findOneBy({username:userName})
+	async get_history(userName: string) {
+		const user = this.userRepository.findOneBy({ username: userName })
 	}
 
-	// async sendConfirmedEmail(email: string) {
-	// 	try {
-	// 		// const { email } = user
-	// 		await this.mailerService.sendMail({
-	// 			to: email,
-	// 			from: 'noreply@nestjs.com',
-	// 			subject: 'Welcome to Nice App! Email Confirmed',
-	// 			text: 'welcom666',
-	// 			// template: 'confirmed',
-	// 			// context: {
-	// 			// 	email
-	// 			// },
-	// 		});
-	// 	}
-	// 	catch (err) {
-	// 		console.log(err)
-	// 	}
-	// }
-
-	// async sendConfirmationEmail(email: string) {
-	// 	// const { email } = await user
-	// 	await this.mailerService.sendMail({
-	// 		from: 'source',
-	// 		to: email,
-	// 		subject: 'Welcome to Nice App! Confirm Email',
-	// 		template: 'confirm',
-	// 		context: {
-	// 			code: this.code
-	// 		},
-	// 	});
-	// }
-
-	// async signin(user: TfaUser, jwt?: JwtService): Promise<any> {
-	// 	try {
-	// 		const foundUser = await this.usertfaRepository.findOneBy({ email: user.email });
-	// 		if (foundUser) {
-	// 			if (foundUser.isVerified) {
-	// 				if (argon.verify(user.password, foundUser.password)) {
-	// 					const payload = { email: user.email };
-	// 					return {
-	// 						token: jwt.sign(payload),
-	// 					};
-	// 				}
-	// 			} else {
-	// 				return new HttpException('Please verify your account', HttpStatus.UNAUTHORIZED)
-	// 			}
-	// 			return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
-	// 		}
-	// 		return new HttpException('Incorrect username or password', HttpStatus.UNAUTHORIZED)
-	// 	} catch (e) {
-	// 		return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
-	// 	}
-	// }
-
-	// async verifyAccount(code: string): Promise<any> {
-	// 	try {
-	// 		const user = await this.usertfaRepository.findOneBy({ authConfirmToken: code });
-	// 		if (!user) {
-	// 			return new HttpException('Verification code has expired or not found', HttpStatus.UNAUTHORIZED)
-	// 		}
-	// 		await this.usertfaRepository.update({ authConfirmToken: user.authConfirmToken }, { isVerified: true, authConfirmToken: undefined })
-	// 		await this.sendConfirmedEmail(user)
-	// 		return true
-	// 	}
-	// 	catch (e) {
-	// 		return new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR)
-	// 	}
-	// }
-
+	async get_stats(Login: string) {
+		const user = await this.userRepository.findOne({
+			where: {
+				login: Login
+			},
+			relations: {
+				userstats: true,
+			},
+		})
+		return ({ stats: user.userstats })
+	}
 }

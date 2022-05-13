@@ -21,6 +21,9 @@ export class UserEntity {
 	@Column({ nullable: true, default: false})
 	twoFaActivated: boolean;
 
+	@Column({ nullable: true, default: false})
+	email_confirmed: boolean;
+
 	@Column({ default: "uploads/profileImages/Screen Shot 2022-03-24 at 5.20.58 PM.png"})
 	imagePath: string
 
