@@ -8,7 +8,6 @@ import { UserService } from './user.service';
 import { GetUser } from './decorators/user.decorator'
 import { Profile } from 'passport';
 import { My_guard } from './guard/guard';
-import { LocalStorage } from "node-localstorage";
 import { response } from 'express';
 import { Request, Response } from 'express';
 import { HttpService } from '@nestjs/axios'

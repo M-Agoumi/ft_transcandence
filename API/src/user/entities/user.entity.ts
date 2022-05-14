@@ -42,8 +42,8 @@ export class UserEntity {
 	@OneToMany(() => Match, (history) => history.player1)
 	history: Match[]
 
-	@ManyToOne(() => Convo, (convo) => convo.administrators)
-	convo: Convo
+	@ManyToMany(() => Convo, (convo) => convo.users)
+	convo: Convo[]
 
 
 }
