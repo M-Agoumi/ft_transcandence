@@ -3,6 +3,7 @@ import { InjectRepository, } from '@nestjs/typeorm';
 import passport from 'passport';
 import { relative } from 'path';
 import { Repository } from 'typeorm';
+import * as argon from "argon2"
 import { Convo } from '../user/entities/conversation.entity';
 import { UserEntity } from '../user/entities/user.entity';
 
@@ -15,73 +16,102 @@ export class ChatService {
 		private readonly userRepository: Repository<UserEntity>,
 	) { }
 
-	async add_relations(owner: string, room_description: string) {
-		console.log('name of the user|', owner, "|")
-		const loadeduser = await this.userRepository.findOne({
-			where: {
-				username: owner
-			},
-			relations: {
-				rooms: true
+	async add_relations(data: any) {
+		try {
+			const loadeduser = await this.userRepository.findOneBy({
+				username: data.owner
 			}
-		})
-		const loadedroom = await this.convoRepository.findOne({
+			)
+			const loadedroom = await this.convoRepository.findOne({
+				where: {
+					description: data.description
+				},
+				relations: {
+					administrators: true,
+				}
+			})
+			loadedroom.administrators = [loadeduser];
+			return await this.convoRepository.save(loadedroom)
+		}
+		catch (err) {
+			console.log(err)
+		}
+	}
+
+	async room_has_password(room_description: string) {
+		const room = await this.convoRepository.findOneBy({ description: room_description })
+		if (room && room.password/*check for empty string later*/)
+			return ({ status: true })
+		return ({ status: false })
+	}
+
+	async verify_password(password: string, room_description: string) {
+		const room = await this.convoRepository.findOneBy({ description: room_description })
+		const verificarion = await argon.verify(room.password, password)
+		if (verificarion === true)
+			return ({ status: true })
+		return ({ status: false })
+	}
+
+	async joinRoom(userName: string, room_description: string) {
+		const user = await this.userRepository.findOne({ where: { username: userName }, relations: { rooms: true } })
+		const loadedRoom = await this.convoRepository.findOne({
 			where: {
 				description: room_description
 			},
 			relations: {
-				owner: true,
-				administrators: true,
+				users: true,
 			}
 		})
-		loadedroom.administrators = [];
-		loadedroom.administrators.push(loadeduser)
-		loadedroom.owner = loadeduser
-		console.log('before')
-		this.convoRepository.save(loadedroom)
-		if (!loadeduser.rooms)
-			loadeduser.rooms = []
-		loadeduser.rooms.push(loadedroom)
-		this.userRepository.save(loadeduser)
-		console.log('after')
+		loadedRoom.users.push(user)
+		this.convoRepository.save(loadedRoom)
+		if (!user.rooms)
+			user.rooms = []
+		user.rooms.push(loadedRoom)
+		this.userRepository.save(user)
 	}
+
+	async get_user_rooms(data: any) {
+		console.log('|', data.username, '|');
+
+		let room_descriptions: string[] = []
+		const loadeduser = await this.userRepository.findOne({ where: { username: data.username }, relations: { rooms: true } })
+		for (const k in loadeduser.rooms) {
+			room_descriptions.push(loadeduser.rooms[k].description)
+		}
+		console.log('>>>>>>>>', loadeduser, '<<<<<<<<<<<')
+		return room_descriptions
+	}
+
 
 	async createRoom(data: any) {
 		try {
-			let new_room: Convo;
+			if (data.description === "")
+				return { status: 'empty description' }
 			const user = await this.userRepository.findOne({ where: { username: data.owner }, relations: { rooms: true } })
-			const room = await this.convoRepository.create(new_room)
-			room.description = data.description
-			room.description = data.description
-			room.password = data.password
+			let room: any = { description: data.description, password: await argon.hash(data.password) };
 			await this.convoRepository.save(room)
-			await this.add_relations(data.owner, room.description)
-			console.log('after2')
-			// const loadedroom = await this.convoRepository.findOne({
-			// 	where: {
-			// 		description: room.description
-			// 	},
-			// 	relations: {
-			// 		owner: true,
-			// 		administrators: true
-			// 	}
-			// })
-			// console.log(user)
+			const loadedroom = await this.convoRepository.findOne({
+				where: {
+					description: data.description
+				},
+				relations: {
+					administrators: true,
+				}
+			})
 			// if (!loadedroom.administrators)
-			// 	loadedroom.administrators = []
-			// loadedroom.administrators.push(user)
-			// // console.log('this is the description', room.description)
-			// loadedroom.owner = user
-			// await this.convoRepository.save(loadedroom);
-			// if (!user.rooms)
-			// 	user.rooms = []
-			// user.rooms.push(loadedroom)
-			// console.log(room)
-			return { status: true }
+			loadedroom.users = [user]
+			loadedroom.administrators = [user]
+			// await loadedroom.administrators.push(user);
+			await this.convoRepository.save(loadedroom)
+			if (!user.rooms)
+				user.rooms = []
+			user.rooms.push(loadedroom)
+			await this.userRepository.save(user)
+			return { status: 'success' }
 		}
 		catch (err) {
-			console.log(err)
-			return { status: false }
+			return { status: 'description already in use' }
 		}
 	}
 
@@ -186,7 +216,7 @@ export class ChatService {
 
 	async get_rooms() {
 		return (this.convoRepository.find(
-			{ relations: { owner: true, administrators: true, banned: true, muted: true, messages: true } }
+			{ relations: { administrators: true, banned: true, muted: true, messages: true } }
 		))
 	}
 }
