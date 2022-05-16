@@ -13,9 +13,6 @@ import { MailerModule, MailerService } from '@nestjs-modules/mailer';
 import AVatar from './entities/file.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { matches } from 'class-validator';
-import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
-import { join } from 'path';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { Convo } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 

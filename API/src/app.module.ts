@@ -9,8 +9,6 @@ import { HttpModule } from 'nestjs-http-promise'
 import AVatar from './user/entities/file.entity';
 import { AuthModule } from './Auth/auth.module';
 import { appController } from './app.controller';
-import { ScheduleModule } from '@nestjs/schedule';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { Convo } from './user/entities/conversation.entity';
 import { Message } from './user/entities/message.entity';
 import { ChatModule } from './chat/chat.module';
@@ -23,10 +21,10 @@ import { ChatModule } from './chat/chat.module';
     username: 'user',
     password: 'password',
     database: 'db',
-    entities: [UserEntity, UserStats, Match, AVatar, Convo ,Message],
+    entities: [UserEntity, UserStats, Match, AVatar, Convo, Message],
     synchronize: true,
-  }), UserModule, HttpModule, AuthModule, ChatModule ],
-  controllers: [appController],
+  }), UserModule, HttpModule, AuthModule, ChatModule],
+  // controllers: [appController],
   // providers: [UserService],
 })
 export class AppModule { }

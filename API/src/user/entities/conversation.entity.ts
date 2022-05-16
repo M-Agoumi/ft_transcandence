@@ -8,17 +8,31 @@ export class Convo {
 	id: number;
 
 	@OneToOne(() => UserEntity)
-    @JoinColumn()
-    owner: UserEntity
+	@JoinColumn()
+	owner: UserEntity
 
-	@OneToMany(type => UserEntity, (administrators) => administrators.convo)
+	@Column({ default: false, nullable: true })
+	private: boolean
+
+	@Column({ unique: true, nullable: true })
+	description: string
+
+	@Column({ nullable: true })
+	password: string
+
+	@ManyToMany(type => UserEntity)
+	@JoinTable({ joinColumn: {} })
 	administrators: UserEntity[];
+
+	@ManyToMany(type => UserEntity)
+	@JoinTable({ joinColumn: {} })
+	banned: UserEntity[];
+
+	@ManyToMany(type => UserEntity)
+	@JoinTable({ joinColumn: {} })
+	muted: UserEntity[];
 
 	@OneToMany(type => Message, (messages) => messages.convo)
 	messages: Message[];
-
-	@ManyToMany(() => UserEntity) 
-	@JoinTable()
-	users: UserEntity[]
 
 }

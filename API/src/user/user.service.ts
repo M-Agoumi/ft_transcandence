@@ -35,11 +35,11 @@ export class UserService {
 		const user = await this.userRepository.findOneBy({ username: userName })
 		if (!user)
 			return (false)
-		console.log(user)
+		// console.log(user)
 		user.email = email
 		user.twoFaActivated = true
 		await this.userRepository.save(user)
-		console.log(email)
+		// console.log(email)
 		return (true)
 	}
 
@@ -172,6 +172,7 @@ export class UserService {
 			twoFa: false
 		}
 		try {
+			console.log('here')
 			const data = await this.httpService.post('https://api.intra.42.fr/oauth/token', {
 				"grant_type": "authorization_code",
 				"client_id": process.env.FORTYTWO_CLIENT_ID,
@@ -179,21 +180,21 @@ export class UserService {
 				"code": code,
 				"redirect_uri": "http://10.11.100.91:4200/next"
 			}).toPromise()
+			console.log('here0')
 			const token = data.data.access_token;
-			// console.log(">>>",token)
 			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
 				headers: {
 					'Authorization': `Bearer ${token}`
 				}
 			}).toPromise()
 			// fill user info to send to create
+			console.log('here1')
 			let user = {} as UserI;
 			user.login = info.data.login;
 			ret.login = info.data.login
-			// console.log('here is the data',info.data.login)
 			/////moving create
+			console.log('here2')
 			try {
-				// const login = newUser.login;
 				const returned_user = await this.userRepository.findOne({
 					where: {
 						login: user.login
@@ -202,33 +203,19 @@ export class UserService {
 						friends: true,
 					},
 				})
-				// console.log('user here',user)
 				if (!returned_user) {
-					// user.logged_in = true
-					console.log('here')
+					// console.log('here')
 					await this.userRepository.save(user);
-					// return ("")
 				}
 				else {
-					// console.log('here2')
 					ret.username = returned_user.username
 					ret.twoFa = returned_user.twoFaActivated
-					// console.log(user.access_token)
-					// returned_user.access_token = user.access_token
-					// for (const k in returned_user.friends) {
-					// 	console.log(returned_user.friends[k])
-					// 	ret.friends.push(returned_user.friends[k].username)
-					// }
-					// ret.username = returned_user.username
-					// await this.userRepository.save(returned_user);
 				}
-				// return returned_user.username
 			}
 			catch (error) {
 				ret.stats = false;
 				console.log(error)
 			}
-			// ret.username = await this.create(user);
 		}
 		catch (error) {
 			ret.stats = false;
@@ -246,8 +233,6 @@ export class UserService {
 			stats: false,
 		}
 		try {
-			// console.log('>>>>>>1', token)
-			// console.log(token);
 			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
 				headers: {
 					'Authorization': `Bearer ${token}`
@@ -255,8 +240,8 @@ export class UserService {
 			}).toPromise()
 			ret.login = info.data.login;
 			ret.token = token;
-			console.log(ret.login)
-			console.log(ret.token)
+			// console.log(ret.login)
+			// console.log(ret.token)
 			ret.stats = true
 		}
 		catch (error) {

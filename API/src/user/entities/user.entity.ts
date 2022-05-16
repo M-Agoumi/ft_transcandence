@@ -12,19 +12,19 @@ export class UserEntity {
 	@Column({ nullable: true, unique: true })
 	username: string;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: true })
 	login: string;
 
-	@Column({ unique: true, nullable: true})
+	@Column({ unique: true, nullable: true })
 	email: string;
-	
-	@Column({ nullable: true, default: false})
+
+	@Column({ nullable: true, default: false })
 	twoFaActivated: boolean;
 
-	@Column({ nullable: true, default: false})
+	@Column({ nullable: true, default: false })
 	email_confirmed: boolean;
 
-	@Column({ default: "uploads/profileImages/Screen Shot 2022-03-24 at 5.20.58 PM.png"})
+	@Column({ default: "uploads/profileImages/Screen Shot 2022-03-24 at 5.20.58 PM.png" })
 	imagePath: string
 
 	@OneToOne(() => UserStats, { cascade: true })
@@ -35,15 +35,20 @@ export class UserEntity {
 	@JoinTable({ joinColumn: {} })
 	friends: UserEntity[];
 
+	@ManyToMany(type => UserEntity, (user) => user.friends)
+	@JoinTable({ joinColumn: {} })
+	blocked: UserEntity[];
+
 	@Column({ default: false })
- 	isEmailConfirmed: boolean;
+	isEmailConfirmed: boolean;
+
+	@ManyToMany(type => Convo)
+	@JoinTable({ joinColumn: {} })
+	rooms: Convo[];
 
 
 	@OneToMany(() => Match, (history) => history.player1)
 	history: Match[]
-
-	@ManyToMany(() => Convo, (convo) => convo.users)
-	convo: Convo[]
 
 
 }

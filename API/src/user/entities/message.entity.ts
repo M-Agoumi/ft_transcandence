@@ -9,10 +9,9 @@ export class Message {
 
 	@Column()
 	content: string
-
-	@OneToOne(() => UserEntity)
-    @JoinColumn()
-    user: UserEntity
+	
+	@Column()
+    sender: string
 
 	@ManyToOne(() => Convo, (convo) => convo.messages)
 	convo: Convo

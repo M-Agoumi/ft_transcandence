@@ -21,7 +21,7 @@ export class AuthController {
 		// let access_token: string = "";
 		ret = await this.userservice.get_tk_li(code)
 		token_username = await this.authService.signToken(ret.login)
-		console.log(token_username)
+		// console.log(token_username)
 		return ({access_token: token_username.access_token, username: token_username.username})
 	}
 	

@@ -38,7 +38,7 @@ export class UserController {
 	@Get('sendEmail')
 	async sendEmail(@Body('email') email: string) {
 		await this.userservice.sendMail(email);
-		console.log(email)
+		// console.log(email)
 		return 'done'
 	}
 
@@ -53,7 +53,7 @@ export class UserController {
 	}
 
 	@Post('sendVerification')
-	hi(@Body('email') email: string, @GetUser() user: any) {
+	sendVerification(@Body('email') email: string, @GetUser() user: any) {
 		this.userservice.sendVerificationLink(email, user.username);
 	}
 
@@ -74,7 +74,7 @@ export class UserController {
 
 	@Post('username') //change username
 	async change_username(@GetUser() user: any, @Body() usernamedto: usernameDto) {
-		console.log('|', usernamedto.username, "|")
+		// console.log('|', usernamedto.username, "|")
 		if (usernamedto.username && usernamedto.username !== "")
 			return await this.userservice.add_username(user.login, usernamedto.username)
 		return ({ status: 'username empty' })
@@ -83,12 +83,13 @@ export class UserController {
 
 	@Get('username')//get username
 	async get_user_name(@GetUser() user: any) {
-		if (user.username) {
-			console.log(user)
-			return { username: user.username }
-		}
-		else
-			return { username: undefined }
+		console.log(user)
+		// if (user.username) {
+		// console.log(user)
+		return { username: user.username }
+		// }
+		// else
+		// 	return { username: undefined }
 	}
 
 	/////////////////////////
@@ -118,7 +119,7 @@ export class UserController {
 		})
 	}))
 	async uploadFile(@UploadedFile() file, @GetUser() user: any) {
-		console.log('heeeeereeeee')
+		// console.log('heeeeereeeee')
 		user.imagePath = file.path;
 		this.userRepository.save(user);
 		return of({ imagePath: file.path })
