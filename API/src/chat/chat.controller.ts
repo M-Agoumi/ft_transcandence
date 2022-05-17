@@ -33,6 +33,26 @@ export class ChatController {
 		return this.chatservice.get_rooms()
 	}
 
+	@Post('hasPass')
+	async has_pass(@Body() data: any) {
+		return await this.chatservice.room_has_password(data.description)
+	}
+
+	@Post('verify_password')
+	async verify_password(@Body() data: any) {
+		return await this.chatservice.verify_password(data.password, data.description)
+	}
+
+	@Post('joinRoom')
+	async joinRoom(@Body() data: any) {
+		return await this.chatservice.joinRoom(data.username, data.description)
+	}
+
+	@Post('leaveRoom')
+	async leaveRoom(@Body() data: any) {
+		return await this.chatservice.leaveRoom(data.username, data.description)
+	}
+
 	// @Post('bann')
 	// test() {
 	// 	this.chatservice.bann_user('room 7', 'imane')
