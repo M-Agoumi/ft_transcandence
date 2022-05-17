@@ -8,23 +8,22 @@ import { Response } from 'express';
 export class appController {
 	constructor(
 		private userservice: UserService
-	){}
+	) { }
 	@Get('/:id')
-	async getDatabaseFilebyId(@Res({passthrough: true}) response: Response, @Param('id', ParseIntPipe) id: number)
-	{
-		
-		console.log('here');
+	async getDatabaseFilebyId(@Res({ passthrough: true }) response: Response, @Param('id', ParseIntPipe) id: number) {
+
+		// console.log('here');
 		// const ret = await this.userservice.check_if_token_valid(token)
 		// if (ret.stats === true)
 		// {
-			const file = await this.userservice.getFileById(id)
-			const stream = Readable.from(file.data)
-			response.set({
-				'Content-Disposition': `inline; filename="${file.filename}"`,
-				'Content-Type': 'image'
-			})
-			return new StreamableFile(stream);
-			// console.log(response)
+		const file = await this.userservice.getFileById(id)
+		const stream = Readable.from(file.data)
+		response.set({
+			'Content-Disposition': `inline; filename="${file.filename}"`,
+			'Content-Type': 'image'
+		})
+		return new StreamableFile(stream);
+		// console.log(response)
 		// }
 		// return ({status:'no'});
 	}

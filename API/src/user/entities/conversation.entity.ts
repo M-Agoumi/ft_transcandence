@@ -7,9 +7,9 @@ export class Convo {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@OneToOne(() => UserEntity)
-	@JoinColumn()
-	owner: UserEntity
+	// @OneToOne(() => UserEntity)
+	// @JoinColumn()
+	// owner: UserEntity
 
 	@Column({ default: false, nullable: true })
 	private: boolean
@@ -20,11 +20,16 @@ export class Convo {
 	@Column({ nullable: true })
 	password: string
 
-	@ManyToMany(type => UserEntity)
-	@JoinTable({ joinColumn: {} })
+	@ManyToMany(() => UserEntity, (user) => user.id)
+	@JoinTable()
 	administrators: UserEntity[];
 
-	@ManyToMany(type => UserEntity)
+	@ManyToMany(() => UserEntity, (user) => user.id)
+	@JoinTable()
+	users: UserEntity[];
+
+
+	@ManyToMany(type => UserEntity, (user) => user.id)
 	@JoinTable({ joinColumn: {} })
 	banned: UserEntity[];
 

@@ -35,16 +35,19 @@ export class UserEntity {
 	@JoinTable({ joinColumn: {} })
 	friends: UserEntity[];
 
-	@ManyToMany(type => UserEntity, (user) => user.friends)
+	@ManyToMany(type => UserEntity, (user) => user.blocked)
 	@JoinTable({ joinColumn: {} })
 	blocked: UserEntity[];
 
 	@Column({ default: false })
 	isEmailConfirmed: boolean;
 
-	@ManyToMany(type => Convo)
+	@ManyToMany(type => Convo, (convo) => convo.users)
 	@JoinTable({ joinColumn: {} })
 	rooms: Convo[];
+
+	@ManyToMany(() => Convo, (album) => album.administrators)
+	convo_administrators: Convo[]
 
 
 	@OneToMany(() => Match, (history) => history.player1)
