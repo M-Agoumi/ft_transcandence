@@ -33,6 +33,7 @@ export class ChatController {
 		return this.chatservice.get_rooms()
 	}
 
+<<<<<<< HEAD
 	@Post('hasPass')
 	async has_pass(@Body() data: any) {
 		return await this.chatservice.room_has_password(data.description)
@@ -53,6 +54,8 @@ export class ChatController {
 		return await this.chatservice.leaveRoom(data.username, data.description)
 	}
 
+=======
+>>>>>>> aa43b46060dd411282fd83f4812350b6848303a0
 	// @Post('bann')
 	// test() {
 	// 	this.chatservice.bann_user('room 7', 'imane')
