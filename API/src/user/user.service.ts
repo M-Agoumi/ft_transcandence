@@ -253,9 +253,74 @@ export class UserService {
 		return (ret)
 	}
 
+	async block_user(blocked_username: string, current_username: string) {
+		const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
+		const user = await this.userRepository.findOne({
+			where: {
+				username: current_username
+			},
+			relations: { blocked: true }
+		})
+		user.blocked.push(blocked_user)
+		await this.userRepository.save(user)
+	}
+
+	async unblock_user(blocked_username: string, current_username: string) {
+		const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
+		const user = await this.userRepository.findOne({
+			where: {
+				username: current_username
+			},
+			relations: { blocked: true }
+		})
+		let index = user.friends.indexOf(blocked_user)
+		if (index > -1)
+			user.friends.splice(index, 1)
+		await this.userRepository.save(user)
+	}
+
+	async removeFriend(removed_friend: string, current_username: string) {
+		const friend = await this.userRepository.findOne({
+			where: {
+				username: removed_friend,
+			},
+			relations: {
+				friends: true,
+			},
+		})
+		if (!friend)
+			return false
+		const loadedUser = await this.userRepository.findOne({
+			where: {
+				username: current_username,
+			},
+			relations: {
+				friends: true,
+			},
+		})
+		if (friend.login !== loadedUser.login) {
+			let index = loadedUser.friends.indexOf(friend)
+			if (index > -1)
+				loadedUser.friends.splice(index, 1)
+			index = friend.friends.indexOf(loadedUser)
+			if (index > -1)
+				friend.friends.splice(index, 1)
+		}
+		await this.userRepository.save(loadedUser)
+		await this.userRepository.save(friend)
+		return true
+	}
+
 
 	async add_friend(login: string, friend_username: string) {
-		const friend = await this.userRepository.findOneBy({ username: friend_username });
+		const friend = await this.userRepository.findOne({
+			where: {
+				username: friend_username,
+			},
+			relations: {
+				friends: true,
+			},
+		})
 		if (!friend)
 			return false
 		const loadedUser = await this.userRepository.findOne({
@@ -266,10 +331,12 @@ export class UserService {
 				friends: true,
 			},
 		})
-		if (friend.login !== loadedUser.login)
+		if (friend.login !== loadedUser.login) {
 			await loadedUser.friends.push(friend)
-
+			await friend.friends.push(loadedUser)
+		}
 		await this.userRepository.save(loadedUser)
+		await this.userRepository.save(friend)
 		return true
 	}
 
@@ -310,6 +377,7 @@ export class UserService {
 	// {
 
 	// }
+
 
 	async add_username(Login: string, newUsername: string) {
 		const user = await this.userRepository.findOneBy({
@@ -353,4 +421,6 @@ export class UserService {
 		})
 		return ({ stats: user.userstats })
 	}
+
+	async
 }

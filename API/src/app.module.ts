@@ -16,7 +16,7 @@ import { ChatModule } from './chat/chat.module';
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), TypeOrmModule.forRoot({
     type: 'postgres',
-    host: '10.11.100.1',
+    host: '10.11.100.14',
     port: 35000,
     username: 'user',
     password: 'password',

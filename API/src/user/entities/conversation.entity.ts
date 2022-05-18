@@ -37,7 +37,8 @@ export class Convo {
 	@JoinTable({ joinColumn: {} })
 	muted: UserEntity[];
 
-	@OneToMany(type => Message, (messages) => messages.convo)
+	@ManyToMany(type => Message)
+	@JoinTable({ joinColumn: {} })
 	messages: Message[];
 
 }

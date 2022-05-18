@@ -105,6 +105,23 @@ export class UserController {
 	async get_friends(@GetUser() user: any) {
 		return await this.userservice.get_friends(user.login)
 	}
+
+	@Post('block')//block user
+	async block_user(@GetUser() user: any, @Body('username') username: string) {
+		return await this.userservice.block_user(username, user.login)
+	}
+
+	@Post('unblock')//unblock user
+	async unblock_user(@GetUser() user: any, @Body('username') username: string) {
+		return await this.userservice.unblock_user(username, user.login)
+	}
+
+	@Post('removeFriend')//remove friend
+	async removeFriend(@GetUser() user: any, @Body('username') username: string) {
+		return await this.userservice.removeFriend(username, user.login)
+	}
+
+
 	/////////////////////////
 	/////////AVATAR//////////
 	/////////////////////////

@@ -7,13 +7,13 @@ export class Message {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column()
+	@Column({ nullable: true })
 	content: string
-	
-	@Column()
-    sender: string
 
-	@ManyToOne(() => Convo, (convo) => convo.messages)
-	convo: Convo
+	@Column({ nullable: true })
+	sender: string
+
+	// @ManyToOne(() => Convo, (convo) => convo.messages)
+	// convo: Convo
 
 }

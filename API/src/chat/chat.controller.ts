@@ -33,7 +33,6 @@ export class ChatController {
 		return this.chatservice.get_rooms()
 	}
 
-<<<<<<< HEAD
 	@Post('hasPass')
 	async has_pass(@Body() data: any) {
 		return await this.chatservice.room_has_password(data.description)
@@ -41,6 +40,7 @@ export class ChatController {
 
 	@Post('verify_password')
 	async verify_password(@Body() data: any) {
+		console.log(data)
 		return await this.chatservice.verify_password(data.password, data.description)
 	}
 
@@ -54,15 +54,26 @@ export class ChatController {
 		return await this.chatservice.leaveRoom(data.username, data.description)
 	}
 
-=======
->>>>>>> aa43b46060dd411282fd83f4812350b6848303a0
-	// @Post('bann')
-	// test() {
-	// 	this.chatservice.bann_user('room 7', 'imane')
+
+	@Post('pushMsg')
+	async pushMsg(@Body() data: any) {
+		console.log(data)
+		return await this.chatservice.pushMsg(data.content, data.sender, data.room);
+	}
+
+	// @Post('roomMessages')
+	// async pushMsg(@Body() data: any) {
+	// 	console.log(data)
+	// 	return await this.chatservice.pushMsg(data.content, data.sender, data.room);
 	// }
 
+	@Post('isPrivate')
+	async isPrivate(@Body() data: any) {
+		console.log(data)
+		return await this.chatservice.isPrivate(data.description);
+	}
 
-	@Get('my_rooms')
+	@Post('my_rooms')
 	async get_room_descriptions(@Body() data: any) {
 		console.log(data)
 		return await this.chatservice.get_user_rooms(data);

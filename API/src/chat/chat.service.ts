@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import * as argon from "argon2"
 import { Convo } from '../user/entities/conversation.entity';
 import { UserEntity } from '../user/entities/user.entity';
+import { Message } from 'src/user/entities/message.entity';
+import messagebird from 'messagebird/types';
 
 @Injectable()
 export class ChatService {
@@ -14,6 +16,8 @@ export class ChatService {
 		private readonly convoRepository: Repository<Convo>,
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,
+		@InjectRepository(Message)
+		private readonly msgRepository: Repository<Message>,
 	) { }
 
 	async add_relations(data: any) {
@@ -83,6 +87,23 @@ export class ChatService {
 		}
 	}
 
+
+	async pushMsg(content: string, sender: string, description: string) {
+		const loadedRoom = await this.convoRepository.findOne({
+			where: {
+				description: description
+			},
+			relations: {
+				messages: true,
+			}
+		})
+		const user = await this.userRepository.findOne({ where: { username: sender }, relations: { rooms: true } })
+		let msg: any = { content: content, sender: user }
+		const new_msg = await this.msgRepository.save(msg)
+		console.log(new_msg);
+
+	}
+
 	async leaveRoom(userName: string, room_description: string) {
 		try {
 
@@ -132,7 +153,6 @@ export class ChatService {
 		for (const k in loadeduser.rooms) {
 			room_descriptions.push(loadeduser.rooms[k].description)
 		}
-		// console.log('>>>>>>>>', loadeduser, '<<<<<<<<<<<')
 		return room_descriptions
 	}
 
@@ -169,7 +189,6 @@ export class ChatService {
 			return { status: 'success' }
 		}
 		catch (err) {
-			// console.log(err)
 			return { status: 'description already in use' }
 		}
 	}
@@ -184,17 +203,19 @@ export class ChatService {
 		return descriptions
 	}
 
-	async block_user(blocked_username: string, current_username: string) {
-		const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
-		const user = await this.userRepository.findOne({
-			where: {
-				username: current_username
-			},
-			relations: { blocked: true }
-		})
-		user.blocked.push(blocked_user)
-		await this.userRepository.save(user)
-	}
+
+
+	// async block_user(blocked_username: string, current_username: string) {
+	// 	const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
+	// 	const user = await this.userRepository.findOne({
+	// 		where: {
+	// 			username: current_username
+	// 		},
+	// 		relations: { blocked: true }
+	// 	})
+	// 	user.blocked.push(blocked_user)
+	// 	await this.userRepository.save(user)
+	// }
 
 	async set_new_password(room_description: string, new_pass: string) {
 		const room = await this.convoRepository.findOne({
@@ -272,6 +293,43 @@ export class ChatService {
 		})
 		room.muted.push(user)
 		this.convoRepository.save(room)
+	}
+
+	async isPrivate(description: string) {
+		const room = await this.convoRepository.findOneBy({ description: description })
+		if (!room || !room.private)
+			return { status: false }
+		return { status: true }
+
+	}
+
+	async get_room_messages(description: string, current_user: string) {
+		let obj: { message: string, sender: string }
+		let arr: { message: string, sender: string }[]
+		const user = await this.userRepository.findOne({
+			where: {
+				username: current_user
+			},
+			relations: {
+				blocked: true
+			}
+		})
+		const loadedRoom = await this.convoRepository.findOne({
+			where: {
+				description: description
+			},
+			relations: {
+				messages: true
+			}
+		})
+		for (const k in loadedRoom.messages) {
+			obj.message = loadedRoom.messages[k].content
+			obj.sender = loadedRoom.messages[k].sender
+			let index = user.blocked.findIndex(u => u.username === obj.sender)
+			if (index === -1)
+				arr.push(obj)
+		}
+		return arr
 	}
 
 	async get_rooms() {
