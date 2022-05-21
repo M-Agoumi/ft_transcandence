@@ -8,14 +8,14 @@ export class UserHelperService {
 
 
 	CreatUserDtoEntity(UserDto: CreateUserDto) {
-		return  of( {
+		return ({
 			email: UserDto.login,
 			username: UserDto.username
 		})
 	}
-	
-	loginUserDtoToEntity(UserDto: LoginUserDto){
-		return of ({
+
+	loginUserDtoToEntity(UserDto: LoginUserDto) {
+		return ({
 			email: UserDto.login,
 			password: UserDto.username
 		})

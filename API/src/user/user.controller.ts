@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
-import { map, Observable, of, retry, switchMap } from 'rxjs';
+// import { map, Observable, of, retry, switchMap } from 'rxjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UserI } from './dto/user.interface';
@@ -150,12 +150,12 @@ export class UserController {
 	async uploadFile(@UploadedFile() file, @GetUser() user: any) {
 		user.imagePath = file.path;
 		this.userRepository.save(user);
-		return of({ imagePath: file.path })
+		return ({ imagePath: file.path })
 	}
 
 	@Get('avatar')	//get avatar
 	get_image(@GetUser() user: any, @Res() res) {
-		return of(res.sendFile(join(process.cwd(), user.imagePath)))
+		return (res.sendFile(join(process.cwd(), user.imagePath)))
 	}
 
 	@Get('all')

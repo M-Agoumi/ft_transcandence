@@ -9,7 +9,7 @@ import { HttpService } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config';
 import AVatar from './entities/file.entity';
 import { createTransport } from 'nodemailer';
-import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
 
 
 
@@ -30,7 +30,10 @@ export class UserService {
 	) { }
 
 	async sendMail(mailOptions: any) {
-		const oauth2Client = new google.auth.OAuth2(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
+		// const auth = new GoogleAuth({
+		// 	scopes: 'https://www.googleapis.com/auth/cloud-platform'
+		// });
+		const oauth2Client = new OAuth2Client(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
 		oauth2Client.setCredentials({ refresh_token: this.config.get('REFRESH_TOKEN') })
 		this.access_token = oauth2Client.getAccessToken()
 		this.Transport = createTransport({
@@ -77,7 +80,6 @@ export class UserService {
 		const url = `${this.config.get('EMAIL_CONFIRMATION_URL')}?token=${token}`;
 
 		const text = `Welcome to Ping Pong. To confirm the email address, click here: ${url}`;
-
 		return this.sendMail({
 			to: Email,
 			subject: 'Email confirmation',
