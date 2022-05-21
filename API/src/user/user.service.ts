@@ -71,9 +71,9 @@ export class UserService {
 		this.Transport.sendMail(mailOptions)
 	}
 
-	sendVerificationLink(Email: string, username: string) {
+	async sendVerificationLink(Email: string, username: string) {
 		const payload: { email: string } = { email: Email };
-		const token = this.jwt.sign(payload, {
+		const token = await this.jwt.sign(payload, {
 			secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
 			expiresIn: `${this.config.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
 		});
@@ -90,7 +90,11 @@ export class UserService {
 	}
 
 	async confirmEmail(Email: string) {
+		if (!Email)
+			return ({ status: 'token expired' });
+
 		const user = await this.userRepository.findOneBy({ email: Email });
+		console.log('>>>>>>>', user, '<<<<<<<<')
 		if (user.isEmailConfirmed) {
 			console.log('email already confirmed')
 			return ({ status: 'already confirmed' });
@@ -112,9 +116,9 @@ export class UserService {
 			console.log('error')
 		} catch (error) {
 			if (error?.name === 'TokenExpiredError') {
+				// return ({ status: 'token expired' })
 				console.log('token expired')
 			}
-			console.log('error2')
 		}
 	}
 

@@ -23,6 +23,7 @@ import { Repository } from 'typeorm';
 import { join } from 'path';
 import { emailDto } from './dto/email.dto';
 import { usernameDto } from './dto/username.dto';
+import { tokenDto } from './dto/token.dto';
 
 @UseGuards(My_guard)
 @Controller('users')
@@ -35,9 +36,9 @@ export class UserController {
 	/////////TWOFA////////
 	//////////////////////
 
-	@Get('sendEmail')
-	async sendEmail(@Body('email') email: string) {
-		await this.userservice.sendMail(email);
+	@Post('sendEmail')
+	async sendEmail(@Body() emaildto: emailDto) {
+		await this.userservice.sendMail(emaildto.email);
 		// console.log(email)
 		return 'done'
 	}
@@ -48,24 +49,29 @@ export class UserController {
 	}
 
 	@Post('disableTwoFa')
-	disableTwoFa(@Body('email') email: string, @GetUser() user: any) {
+	disableTwoFa(@Body() emaildto: emailDto, @GetUser() user: any) {
 		return this.userservice.disableTwoFa(user.username);
 	}
 
 	@Post('sendVerification')
-	sendVerification(@Body('email') email: string, @GetUser() user: any) {
-		this.userservice.sendVerificationLink(email, user.username);
+	sendVerification(@Body() emaildto: emailDto, @GetUser() user: any) {
+		this.userservice.sendVerificationLink(emaildto.email, user.username);
 	}
 
 	@Post('confirm')
-	async confirm(@Body('token') token: string, @GetUser() user: any) {
-		const email = await this.userservice.decodeConfirmationToken(token);
+	async confirm(@Body() tokendto: tokenDto, @GetUser() user: any) {
+		const email = await this.userservice.decodeConfirmationToken(tokendto.token);
 		return await this.userservice.confirmEmail(email);
 	}
 
+	@Post('logout')
+	async logout(@GetUser() user: any) {
+		user.isEmailConfirmed = false
+	}
+
 	@Get('2fa')
-	async activateTwoFa(@GetUser() user: any, @Body('email') email: string) {
-		return await this.userservice.activateTwoFa(user.login, email)
+	async activateTwoFa(@GetUser() user: any, @Body() emaildto: emailDto) {
+		return await this.userservice.activateTwoFa(user.login, emaildto.email)
 	}
 
 	/////////////////////////
@@ -97,8 +103,8 @@ export class UserController {
 	/////////////////////////
 
 	@Post('friends')///add friend
-	async add_friend(@GetUser() user: any, @Body('username') username: string) {
-		return await this.userservice.add_friend(user.login, username)
+	async add_friend(@GetUser() user: any, @Body() usernamedto: usernameDto) {
+		return await this.userservice.add_friend(user.login, usernamedto.username)
 	}
 
 	@Get('friends')//get friends
@@ -107,18 +113,18 @@ export class UserController {
 	}
 
 	@Post('block')//block user
-	async block_user(@GetUser() user: any, @Body('username') username: string) {
-		return await this.userservice.block_user(username, user.login)
+	async block_user(@GetUser() user: any, @Body() usernamedto: usernameDto) {
+		return await this.userservice.block_user(usernamedto.username, user.login)
 	}
 
 	@Post('unblock')//unblock user
-	async unblock_user(@GetUser() user: any, @Body('username') username: string) {
-		return await this.userservice.unblock_user(username, user.login)
+	async unblock_user(@GetUser() user: any, @Body() usernamedto: usernameDto) {
+		return await this.userservice.unblock_user(usernamedto.username, user.login)
 	}
 
 	@Post('removeFriend')//remove friend
-	async removeFriend(@GetUser() user: any, @Body('username') username: string) {
-		return await this.userservice.removeFriend(username, user.login)
+	async removeFriend(@GetUser() user: any, @Body() usernamedto: usernameDto) {
+		return await this.userservice.removeFriend(usernamedto.username, user.login)
 	}
 
 
@@ -148,7 +154,7 @@ export class UserController {
 	}
 
 	@Get('all')
-	async findAll(@Param('token') token: string) {
+	async findAll(@Param() tokendto: tokenDto) {
 		return this.userservice.get_all_users()
 	}
 
@@ -169,7 +175,7 @@ export class UserController {
 
 	////GET USER BY USERNAME
 	@Get(':username')
-	async get_user_by_username(@GetUser() user: any, @Param('username') username: string) {
-		return await this.userservice.get_user_by_username(username)
+	async get_user_by_username(@GetUser() user: any, @Param() usernamedto: usernameDto) {
+		return await this.userservice.get_user_by_username(usernamedto.username)
 	}
 }

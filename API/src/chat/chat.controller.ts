@@ -11,7 +11,6 @@ export class ChatController {
 	async createRoom(@Body() data: any) {
 		try {
 			return await this.chatservice.createRoom(data)
-			console.log('after3')
 		}
 		catch (err) {
 			console.log(data)
@@ -21,7 +20,6 @@ export class ChatController {
 	async testo(@Body() data: any) {
 		try {
 			return await this.chatservice.add_relations(data)
-			console.log('after3')
 		}
 		catch (err) {
 			console.log(data)
@@ -61,12 +59,6 @@ export class ChatController {
 		return await this.chatservice.pushMsg(data.content, data.sender, data.room);
 	}
 
-	// @Post('roomMessages')
-	// async pushMsg(@Body() data: any) {
-	// 	console.log(data)
-	// 	return await this.chatservice.pushMsg(data.content, data.sender, data.room);
-	// }
-
 	@Post('isPrivate')
 	async isPrivate(@Body() data: any) {
 		console.log(data)
@@ -82,6 +74,11 @@ export class ChatController {
 	@Get('descriptions')
 	async get_descriptions() {
 		return await this.chatservice.get_room_descriptions();
+	}
+
+	@Get('descriptions/private')
+	async get_descriptions_private() {
+		return await this.chatservice.get_room_descriptions_private();
 	}
 
 }

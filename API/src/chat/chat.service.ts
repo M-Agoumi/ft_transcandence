@@ -7,7 +7,6 @@ import * as argon from "argon2"
 import { Convo } from '../user/entities/conversation.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { Message } from 'src/user/entities/message.entity';
-import messagebird from 'messagebird/types';
 
 @Injectable()
 export class ChatService {
@@ -46,7 +45,6 @@ export class ChatService {
 		console.log('1', room_description);
 
 		const room = await this.convoRepository.findOneBy({ description: room_description })
-		console.log('2', room);
 		if (room && room.password/*check for empty string later*/)
 			return ({ status: true })
 		return ({ status: false })
@@ -170,18 +168,23 @@ export class ChatService {
 				},
 				relations: {
 					administrators: true,
-					users: true
+					users: true,
+					owner: true
 				}
 			})
 			if (!loadedroom.administrators)
 				loadedroom.administrators = []
 			loadedroom.administrators.push(user)
-			loadedroom.private = data.private
+			if (!loadedroom.users)
+				loadedroom.users = [user]
+			loadedroom.owner = [user]
+			loadedroom.private = data.mode
 			if (data.password !== "") {
 				loadedroom.password = await argon.hash(data.password)
 			}
 			console.log('>>>>>>>>>', loadedroom, '<<<<<<<<<<<')
 			await this.convoRepository.save(loadedroom)
+			console.log('after')
 			if (!user.rooms)
 				user.rooms = []
 			user.rooms.push(loadedroom)
@@ -189,20 +192,51 @@ export class ChatService {
 			return { status: 'success' }
 		}
 		catch (err) {
+			console.log(err)
 			return { status: 'description already in use' }
 		}
 	}
 
 	async get_room_descriptions() {
+		let obj: { description: string, hasPass: boolean } = { description: "", hasPass: false }
+		let arr: { description: string, hasPass: boolean }[] = []
 		const rooms = await this.convoRepository.find()
-		let descriptions: string[] = []
+		// let descriptions: string[] = []
 		for (const k in rooms) {
-			if (!rooms[k].private)
-				descriptions.push(rooms[k].description)
+			// console.log(rooms[k])
+			if (!rooms[k].private) {
+				obj = {
+					description: rooms[k].description,
+					hasPass: false
+				}
+				if (rooms[k].password && rooms[k].password !== "")
+					obj.hasPass = true
+				arr.push(obj)
+			}
+			// descriptions.push(rooms[k].description)
 		}
-		return descriptions
+		return arr
 	}
 
+	async get_room_descriptions_private() {
+		let obj: { description: string, hasPass: boolean } = { description: "", hasPass: false }
+		let arr: { description: string, hasPass: boolean }[] = []
+		const rooms = await this.convoRepository.find()
+		// let descriptions: string[] = []
+		for (const k in rooms) {
+			if (rooms[k].private) {
+				obj = {
+					description: rooms[k].description,
+					hasPass: false
+				}
+				if (rooms[k].password && rooms[k].password !== "")
+					obj.hasPass = true
+				arr.push(obj)
+			}
+			// descriptions.push(rooms[k].description)
+		}
+		return arr
+	}
 
 
 	// async block_user(blocked_username: string, current_username: string) {
@@ -334,7 +368,7 @@ export class ChatService {
 
 	async get_rooms() {
 		return (this.convoRepository.find(
-			{ relations: { administrators: true, users: true, banned: true, muted: true, messages: true } }
+			{ relations: { administrators: true, users: true, banned: true, muted: true, messages: true, owner: true } }
 		))
 	}
 }
