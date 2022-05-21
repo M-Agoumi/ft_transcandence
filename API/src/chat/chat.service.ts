@@ -7,6 +7,11 @@ import * as argon from "argon2"
 import { Convo } from '../user/entities/conversation.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { Message } from 'src/user/entities/message.entity';
+import { roomCreationDto } from 'src/user/dto/room_creation.dto';
+import { passwordVerificationDto } from 'src/user/dto/password_verification.dto';
+import { pushMsgDto } from 'src/user/dto/push_msg.dto';
+import { usernameDto } from 'src/user/dto/username.dto';
+import { descriptionDto } from 'src/user/dto/description.dto';
 
 @Injectable()
 export class ChatService {
@@ -41,8 +46,16 @@ export class ChatService {
 		}
 	}
 
+	async add_password(password: string, description: string) {
+		let room = await this.convoRepository.findOneBy({ description: description })
+		if (!room) {
+			console.log('room not found')
+			return;
+		}
+		room.password = await argon.hash(password)
+	}
+
 	async room_has_password(room_description: string) {
-		console.log('1', room_description);
 
 		const room = await this.convoRepository.findOneBy({ description: room_description })
 		if (room && room.password/*check for empty string later*/)
@@ -50,9 +63,11 @@ export class ChatService {
 		return ({ status: false })
 	}
 
-	async verify_password(password: string, room_description: string) {
-		const room = await this.convoRepository.findOneBy({ description: room_description })
-		const verificarion = await argon.verify(room.password, password)
+	async verify_password(passwordverificationdto: passwordVerificationDto) {   /// room_description => description
+		let verificarion: boolean = false;
+		const room = await this.convoRepository.findOneBy({ description: passwordverificationdto.description })
+		if (passwordverificationdto.password)
+			verificarion = await argon.verify(room.password, passwordverificationdto.password)
 		if (verificarion === true)
 			return ({ status: true })
 		return ({ status: false })
@@ -86,20 +101,18 @@ export class ChatService {
 	}
 
 
-	async pushMsg(content: string, sender: string, description: string) {
+	async pushMsg(pushmsgdto: pushMsgDto) {
 		const loadedRoom = await this.convoRepository.findOne({
 			where: {
-				description: description
+				description: pushmsgdto.description
 			},
 			relations: {
 				messages: true,
 			}
 		})
-		const user = await this.userRepository.findOne({ where: { username: sender }, relations: { rooms: true } })
-		let msg: any = { content: content, sender: user }
+		const user = await this.userRepository.findOne({ where: { username: pushmsgdto.sender }, relations: { rooms: true } })
+		let msg: any = { content: pushmsgdto.content, sender: user }
 		const new_msg = await this.msgRepository.save(msg)
-		console.log(new_msg);
-
 	}
 
 	async leaveRoom(userName: string, room_description: string) {
@@ -118,53 +131,52 @@ export class ChatService {
 					users: true,
 				}
 			})
-			console.log(loadedRoom.users);
-			console.log(user);
 			let index = loadedRoom.users.findIndex(i => i.username === user.username)
-			console.log('index = |', index, '|')
 			if (index > -1)
 				loadedRoom.users.splice(index, 1)
 			index = loadedRoom.administrators.findIndex(i => i.username === user.username)
-			console.log('index = |', index, '|')
 			if (index > -1)
 				loadedRoom.administrators.splice(index, 1)
 			await this.convoRepository.save(loadedRoom)
 			index = user.rooms.findIndex(room => room.description === loadedRoom.description)
-			console.log('index = |', index, '|')
 			if (index > -1)
 				user.rooms.splice(index, 1)
 			await this.userRepository.save(user)
 			return ({ status: 'end' })
 		}
 		catch (err) {
-			console.log(err)
+			//console.log(err)
 			return ({ status: 'something went wrong' })
 		}
 
 	}
 
-	async get_user_rooms(data: any) {
-		console.log('|', data.username, '|');
-
+	async get_user_rooms(usernamedto: usernameDto) {
+		let obj: { description: string, private: boolean } = { description: "", private: false }
+		let arr: { description: string, private: boolean }[] = []
 		let room_descriptions: string[] = []
-		const loadeduser = await this.userRepository.findOne({ where: { username: data.username }, relations: { rooms: true } })
+		const loadeduser = await this.userRepository.findOne({ where: { username: usernamedto.username }, relations: { rooms: true } })
 		for (const k in loadeduser.rooms) {
-			room_descriptions.push(loadeduser.rooms[k].description)
+			obj = {
+				description: loadeduser.rooms[k].description,
+				private: loadeduser.rooms[k].private
+			}
+			arr.push(obj)
 		}
-		return room_descriptions
+		return arr
 	}
 
 
-	async createRoom(data: any) {
+	async createRoom(roomcreationdto: roomCreationDto) {    ///owner  => username
 		try {
-			if (data.description === "")
+			if (roomcreationdto.description === "")
 				return { status: 'empty description' }
-			const user = await this.userRepository.findOne({ where: { username: data.owner }, relations: { rooms: true } })
-			let room: any = { description: data.description, password: "" };
+			const user = await this.userRepository.findOne({ where: { username: roomcreationdto.username }, relations: { rooms: true } })
+			let room: any = { description: roomcreationdto.description, password: "" };
 			await this.convoRepository.save(room)
 			const loadedroom = await this.convoRepository.findOne({
 				where: {
-					description: data.description
+					description: roomcreationdto.description
 				},
 				relations: {
 					administrators: true,
@@ -175,16 +187,16 @@ export class ChatService {
 			if (!loadedroom.administrators)
 				loadedroom.administrators = []
 			loadedroom.administrators.push(user)
-			if (!loadedroom.users)
-				loadedroom.users = [user]
+			// if (!loadedroom.users)
+			loadedroom.users = [user]
 			loadedroom.owner = [user]
-			loadedroom.private = data.mode
-			if (data.password !== "") {
-				loadedroom.password = await argon.hash(data.password)
+			loadedroom.private = roomcreationdto.mode
+			if (roomcreationdto.password !== "") {
+				loadedroom.password = await argon.hash(roomcreationdto.password)
 			}
-			console.log('>>>>>>>>>', loadedroom, '<<<<<<<<<<<')
+			//console.log('>>>>>>>>>', loadedroom, '<<<<<<<<<<<')
 			await this.convoRepository.save(loadedroom)
-			console.log('after')
+			//console.log('after')
 			if (!user.rooms)
 				user.rooms = []
 			user.rooms.push(loadedroom)
@@ -192,7 +204,7 @@ export class ChatService {
 			return { status: 'success' }
 		}
 		catch (err) {
-			console.log(err)
+			//console.log(err)
 			return { status: 'description already in use' }
 		}
 	}
@@ -203,7 +215,7 @@ export class ChatService {
 		const rooms = await this.convoRepository.find()
 		// let descriptions: string[] = []
 		for (const k in rooms) {
-			// console.log(rooms[k])
+			// //console.log(rooms[k])
 			if (!rooms[k].private) {
 				obj = {
 					description: rooms[k].description,
@@ -236,6 +248,10 @@ export class ChatService {
 			// descriptions.push(rooms[k].description)
 		}
 		return arr
+	}
+
+	async delete_all() {
+		await this.convoRepository.clear()
 	}
 
 
@@ -284,7 +300,22 @@ export class ChatService {
 		room.administrators.push(new_admin)
 		this.convoRepository.save(room)
 	}
-	str = "str"
+
+	// async kickUser(room_description: string, kicked_username: string) {
+	// 	const user = await this.userRepository.findOneBy({ username: kicked_username })
+	// 	const room = await this.convoRepository.findOne({
+	// 		where: {
+	// 			description: room_description
+	// 		},
+	// 		relations: {
+	// 			users: true
+	// 		}
+	// 	})
+	// 	let index = room.users.findIndex(room_user => room_user.username === user.username)
+	// 	if (index > -1)
+	// 		room.users.splice
+
+	// }
 
 	async bann_user(room_description: string, banned_username: string) {
 		const user = await this.userRepository.findOneBy({ username: banned_username })
@@ -296,16 +327,17 @@ export class ChatService {
 				banned: true
 			}
 		})
+		this.leaveRoom(user.username, room_description)
 		room.banned.push(user)
 		this.convoRepository.save(room)
 		let repo = this.convoRepository
-		console.log(room)
+		//console.log(room)
 		setTimeout(function () {
 			const index = room.banned.indexOf(user)
 			if (index > -1)
 				room.banned.splice(index, 1)
 			repo.save(room)
-			console.log('end', room)
+			//console.log('end', room)
 		}, 10000)
 	}
 
@@ -313,6 +345,29 @@ export class ChatService {
 		const index = convo.banned.indexOf(user)
 		if (index > -1)
 			convo.banned.splice(index, 1)
+	}
+
+	async roomUsers(descriptiondto: descriptionDto) {
+		let users: string[] = []
+		console.log(descriptiondto);
+
+
+		const room = await this.convoRepository.findOne({
+			where: {
+				description: descriptiondto.description
+			},
+			relations: {
+				users: true
+			}
+		})
+		if (room) {
+			for (const k in room.users) {
+				users.push(room.users[k].username)
+			}
+			return users
+		}
+		else
+			return ['room not found']
 	}
 
 	async mute_user(room_description: string, muted_username: string) {

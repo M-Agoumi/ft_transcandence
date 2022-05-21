@@ -32,7 +32,7 @@ export class AuthService {
 		// 	expiresIn: '7d',
 		// 	secret: this.configService.get('JWT_REFRESH_SECRET')
 		// }))
-		// console.log(Login)
+		// //console.log(Login)
 		const user = await this.userRepository.findOneBy({ login: Login })
 		if (user)
 			username = user.username

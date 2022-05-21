@@ -42,8 +42,8 @@ export class UserEntity {
 	@Column({ default: false })
 	isEmailConfirmed: boolean;
 
-	@ManyToMany(type => Convo, (convo) => convo.users)
-	@JoinTable({ joinColumn: {} })
+	@ManyToMany(type => Convo)
+	@JoinTable()
 	rooms: Convo[];
 
 	@ManyToMany(() => Convo, (album) => album.administrators)

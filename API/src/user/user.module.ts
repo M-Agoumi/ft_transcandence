@@ -9,7 +9,7 @@ import { HttpModule } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config';
 import { UserStats } from './entities/stats.entity';
 import { Match } from './entities/match.entity';
-import { MailerModule, MailerService } from '@nestjs-modules/mailer';
+import { MailerModule } from '@nestjs-modules/mailer';
 import AVatar from './entities/file.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { matches } from 'class-validator';

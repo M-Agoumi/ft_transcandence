@@ -39,7 +39,7 @@ export class UserController {
 	@Post('sendEmail')
 	async sendEmail(@Body() emaildto: emailDto) {
 		await this.userservice.sendMail(emaildto.email);
-		// console.log(email)
+		// //console.log(email)
 		return 'done'
 	}
 
@@ -69,10 +69,10 @@ export class UserController {
 		user.isEmailConfirmed = false
 	}
 
-	@Get('2fa')
-	async activateTwoFa(@GetUser() user: any, @Body() emaildto: emailDto) {
-		return await this.userservice.activateTwoFa(user.login, emaildto.email)
-	}
+	// @Get('2fa')
+	// async activateTwoFa(@GetUser() user: any, @Body() emaildto: emailDto) {
+	// 	return await this.userservice.activateTwoFa(user.login, emaildto.email)
+	// }
 
 	/////////////////////////
 	/////////USERNAME////////
@@ -80,7 +80,7 @@ export class UserController {
 
 	@Post('username') //change username
 	async change_username(@GetUser() user: any, @Body() usernamedto: usernameDto) {
-		// console.log('|', usernamedto.username, "|")
+		// //console.log('|', usernamedto.username, "|")
 		if (usernamedto.username && usernamedto.username !== "")
 			return await this.userservice.add_username(user.login, usernamedto.username)
 		return ({ status: 'username empty' })
@@ -89,9 +89,9 @@ export class UserController {
 
 	@Get('username')//get username
 	async get_user_name(@GetUser() user: any) {
-		console.log(user)
+		//console.log(user)
 		// if (user.username) {
-		// console.log(user)
+		// //console.log(user)
 		return { username: user.username }
 		// }
 		// else
@@ -114,17 +114,23 @@ export class UserController {
 
 	@Post('block')//block user
 	async block_user(@GetUser() user: any, @Body() usernamedto: usernameDto) {
-		return await this.userservice.block_user(usernamedto.username, user.login)
+		return await this.userservice.block_user(usernamedto.username, user.username)
 	}
 
 	@Post('unblock')//unblock user
 	async unblock_user(@GetUser() user: any, @Body() usernamedto: usernameDto) {
-		return await this.userservice.unblock_user(usernamedto.username, user.login)
+		console.log(usernamedto)
+		return await this.userservice.unblock_user(usernamedto.username, user.username)
+	}
+
+	@Get('blockedUsers')
+	async blocked(@GetUser() user: any) {
+		return await this.userservice.blocked_list(user.username)
 	}
 
 	@Post('removeFriend')//remove friend
 	async removeFriend(@GetUser() user: any, @Body() usernamedto: usernameDto) {
-		return await this.userservice.removeFriend(usernamedto.username, user.login)
+		return await this.userservice.removeFriend(usernamedto.username, user.username)
 	}
 
 
@@ -142,7 +148,6 @@ export class UserController {
 		})
 	}))
 	async uploadFile(@UploadedFile() file, @GetUser() user: any) {
-		// console.log('heeeeereeeee')
 		user.imagePath = file.path;
 		this.userRepository.save(user);
 		return of({ imagePath: file.path })
@@ -154,7 +159,7 @@ export class UserController {
 	}
 
 	@Get('all')
-	async findAll(@Param() tokendto: tokenDto) {
+	async findAll() {
 		return this.userservice.get_all_users()
 	}
 

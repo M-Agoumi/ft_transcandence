@@ -4,7 +4,6 @@ import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserI } from './dto/user.interface';
 import { LoginUserDto } from './dto/login-user.dto';
-import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config';
@@ -27,30 +26,8 @@ export class UserService {
 		@InjectRepository(AVatar)
 		private readonly avatarRepo: Repository<AVatar>,
 		private readonly httpService: HttpService,
-		private readonly mailerService: MailerService,
 
 	) { }
-
-	async enableTwoFa(email: string, userName: string) {
-		const user = await this.userRepository.findOneBy({ username: userName })
-		if (!user)
-			return (false)
-		// console.log(user)
-		user.email = email
-		user.twoFaActivated = true
-		await this.userRepository.save(user)
-		// console.log(email)
-		return (true)
-	}
-
-	async disableTwoFa(userName: string) {
-		const user = await this.userRepository.findOneBy({ username: userName })
-		if (!user)
-			return (false)
-		user.twoFaActivated = false
-		await this.userRepository.save(user)
-		return (true)
-	}
 
 	async sendMail(mailOptions: any) {
 		const oauth2Client = new google.auth.OAuth2(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
@@ -71,6 +48,25 @@ export class UserService {
 		this.Transport.sendMail(mailOptions)
 	}
 
+	async enableTwoFa(email: string, userName: string) {
+		const user = await this.userRepository.findOneBy({ username: userName })
+		if (!user)
+			return (false)
+		user.email = email
+		user.twoFaActivated = true
+		await this.userRepository.save(user)
+		return (true)
+	}
+
+	async disableTwoFa(userName: string) {
+		const user = await this.userRepository.findOneBy({ username: userName })
+		if (!user)
+			return (false)
+		user.twoFaActivated = false
+		await this.userRepository.save(user)
+		return (true)
+	}
+
 	async sendVerificationLink(Email: string, username: string) {
 		const payload: { email: string } = { email: Email };
 		const token = await this.jwt.sign(payload, {
@@ -89,21 +85,6 @@ export class UserService {
 		})
 	}
 
-	async confirmEmail(Email: string) {
-		if (!Email)
-			return ({ status: 'token expired' });
-
-		const user = await this.userRepository.findOneBy({ email: Email });
-		console.log('>>>>>>>', user, '<<<<<<<<')
-		if (user.isEmailConfirmed) {
-			console.log('email already confirmed')
-			return ({ status: 'already confirmed' });
-		}
-		user.isEmailConfirmed = true
-		this.userRepository.save(user)
-		return ({ status: 'si' })
-	}
-
 	async decodeConfirmationToken(token: string) {
 		try {
 			const payload = await this.jwt.verify(token, {
@@ -113,13 +94,47 @@ export class UserService {
 			if (typeof payload === 'object' && 'email' in payload) {
 				return payload.email;
 			}
-			console.log('error')
+			//console.log('error')
 		} catch (error) {
 			if (error?.name === 'TokenExpiredError') {
-				// return ({ status: 'token expired' })
-				console.log('token expired')
+				//console.log('token expired')
 			}
 		}
+	}
+
+	async confirmEmail(Email: string) {
+		if (!Email)
+			return ({ status: 'token expired' });
+
+		const user = await this.userRepository.findOneBy({ email: Email });
+		//console.log('>>>>>>>', user, '<<<<<<<<')
+		if (user.isEmailConfirmed) {
+			//console.log('email already confirmed')
+			return ({ status: 'already confirmed' });
+		}
+		user.isEmailConfirmed = true
+		this.userRepository.save(user)
+		return ({ status: 'si' })
+	}
+
+	/////////////////////////
+	/////////FRIENDS/////////
+	/////////////////////////
+
+	async add_username(Login: string, newUsername: string) {
+		const user = await this.userRepository.findOneBy({
+			login: Login
+		})
+		const user_name_check = await this.userRepository.findOneBy({
+			username: newUsername
+		})
+		// if (user_name_check && user_name_check.username)
+		// {
+		// 	return false
+		// }
+		user.username = newUsername;
+		await this.userRepository.save(user);
+		return true
 	}
 
 
@@ -128,18 +143,35 @@ export class UserService {
 		return await this.userRepository.find({
 			relations: {
 				friends: true,
-				rooms: true
+				rooms: true,
+				blocked: true
 			},
 		});
+	}
+
+	async blocked_list(username: string) {
+		let blocked: string[] = []
+		const user = await this.userRepository.findOne({
+			where: {
+				username: username
+			},
+			relations: {
+				blocked: true
+			}
+		})
+		for (const k in user.blocked) {
+			blocked.push(user.blocked[k].username)
+		}
+		return blocked
 	}
 
 	async remove_user(user: LoginUserDto) {
 		const login = user.login;
 		const to_be_removed = await this.userRepository.findOneBy({ login })
 		if (to_be_removed) {
-			console.log(`removing ${to_be_removed.username}`)
+			//console.log(`removing ${to_be_removed.username}`)
 			await this.userRepository.remove(to_be_removed);
-			console.log(`removed`)
+			//console.log(`removed`)
 		}
 	}
 
@@ -161,12 +193,12 @@ export class UserService {
 
 	}
 
-	async activateTwoFa(Login: string, Email: string) {
-		const user = await this.userRepository.findOneBy({ login: Login })
-		user.email = Email;
-		user.twoFaActivated = true;
-		this.userRepository.save(user)
-	}
+	// async activateTwoFa(Login: string, Email: string) {
+	// 	const user = await this.userRepository.findOneBy({ login: Login })
+	// 	user.email = Email;
+	// 	user.twoFaActivated = true;
+	// 	this.userRepository.save(user)
+	// }
 
 	async get_tk_li(code: string) {
 		let token = "";
@@ -177,7 +209,6 @@ export class UserService {
 			twoFa: false
 		}
 		try {
-			console.log('here')
 			const data = await this.httpService.post('https://api.intra.42.fr/oauth/token', {
 				"grant_type": "authorization_code",
 				"client_id": process.env.FORTYTWO_CLIENT_ID,
@@ -185,7 +216,6 @@ export class UserService {
 				"code": code,
 				"redirect_uri": "http://10.11.100.91:4200/next"
 			}).toPromise()
-			console.log('here0')
 			const token = data.data.access_token;
 			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
 				headers: {
@@ -193,12 +223,10 @@ export class UserService {
 				}
 			}).toPromise()
 			// fill user info to send to create
-			console.log('here1')
 			let user = {} as UserI;
 			user.login = info.data.login;
 			ret.login = info.data.login
 			/////moving create
-			console.log('here2')
 			try {
 				const returned_user = await this.userRepository.findOne({
 					where: {
@@ -209,7 +237,7 @@ export class UserService {
 					},
 				})
 				if (!returned_user) {
-					// console.log('here')
+					// //console.log('here')
 					await this.userRepository.save(user);
 				}
 				else {
@@ -219,100 +247,121 @@ export class UserService {
 			}
 			catch (error) {
 				ret.stats = false;
-				console.log(error)
+				//console.log(error)
+				//console.log('in3l1')
 			}
 		}
 		catch (error) {
 			ret.stats = false;
-			console.log('in3l2')
+			//console.log('in3l2')
 			return ret
 		}
 		// (ret.username === undefined || ret.username === null) ? ret.username = "": 0
 		return (ret)
 	}
 
-	async check_if_token_valid(token: string) {
-		let ret = {
-			login: "",
-			token: "",
-			stats: false,
-		}
-		try {
-			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
-				headers: {
-					'Authorization': `Bearer ${token}`
-				}
-			}).toPromise()
-			ret.login = info.data.login;
-			ret.token = token;
-			// console.log(ret.login)
-			// console.log(ret.token)
-			ret.stats = true
-		}
-		catch (error) {
-			// console.log(error)
-			ret.stats = false
-			return ret
-		}
-		return (ret)
-	}
+	// async check_if_token_valid(token: string) {
+	// 	let ret = {
+	// 		login: "",
+	// 		token: "",
+	// 		stats: false,
+	// 	}
+	// 	try {
+	// 		const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
+	// 			headers: {
+	// 				'Authorization': `Bearer ${token}`
+	// 			}
+	// 		}).toPromise()
+	// 		ret.login = info.data.login;
+	// 		ret.token = token;
+	// 		// //console.log(ret.login)
+	// 		// //console.log(ret.token)
+	// 		ret.stats = true
+	// 	}
+	// 	catch (error) {
+	// 		// //console.log(error)
+	// 		ret.stats = false
+	// 		return ret
+	// 	}
+	// 	return (ret)
+	// }
 
 	async block_user(blocked_username: string, current_username: string) {
-		const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
-		const user = await this.userRepository.findOne({
-			where: {
-				username: current_username
-			},
-			relations: { blocked: true }
-		})
-		user.blocked.push(blocked_user)
-		await this.userRepository.save(user)
+		try {
+			const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
+			const user = await this.userRepository.findOne({
+				where: {
+					username: current_username
+				},
+				relations: { blocked: true, friends: true }
+			})
+			user.blocked.push(blocked_user)
+			this.removeFriend(blocked_user.username, current_username)
+			await this.userRepository.save(user)
+			return { status: true }
+		}
+		catch {
+			return { status: false }
+		}
 	}
 
 	async unblock_user(blocked_username: string, current_username: string) {
-		const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
-		const user = await this.userRepository.findOne({
-			where: {
-				username: current_username
-			},
-			relations: { blocked: true }
-		})
-		let index = user.friends.indexOf(blocked_user)
-		if (index > -1)
-			user.friends.splice(index, 1)
-		await this.userRepository.save(user)
+		try {
+			const blocked_user = await this.userRepository.findOneBy({ username: blocked_username })
+			const user = await this.userRepository.findOne({
+				where: {
+					username: current_username
+				},
+				relations: { blocked: true }
+			})
+			console.log(user)
+			let index = user.blocked.findIndex(user => user.username === blocked_user.username)
+			if (index > -1)
+				user.blocked.splice(index, 1)
+			await this.userRepository.save(user)
+			return { status: true }
+		}
+		catch {
+			return { status: false }
+		}
 	}
 
 	async removeFriend(removed_friend: string, current_username: string) {
-		const friend = await this.userRepository.findOne({
-			where: {
-				username: removed_friend,
-			},
-			relations: {
-				friends: true,
-			},
-		})
-		if (!friend)
-			return false
-		const loadedUser = await this.userRepository.findOne({
-			where: {
-				username: current_username,
-			},
-			relations: {
-				friends: true,
-			},
-		})
-		if (friend.login !== loadedUser.login) {
-			let index = loadedUser.friends.indexOf(friend)
-			if (index > -1)
-				loadedUser.friends.splice(index, 1)
-			index = friend.friends.indexOf(loadedUser)
-			if (index > -1)
-				friend.friends.splice(index, 1)
+		try {
+			const friend = await this.userRepository.findOne({
+				where: {
+					username: removed_friend,
+				},
+				relations: {
+					friends: true,
+				},
+			})
+			if (!friend)
+				return false
+			const loadedUser = await this.userRepository.findOne({
+				where: {
+					username: current_username,
+				},
+				relations: {
+					friends: true,
+				},
+			})
+			if (friend.login !== loadedUser.login) {
+				let index = loadedUser.friends.findIndex(friend => friend.username === friend.username)
+				if (index > -1)
+					loadedUser.friends.splice(index, 1)
+				index = friend.friends.findIndex(user => user.username === loadedUser.username)
+				if (index > -1)
+					friend.friends.splice(index, 1)
+			}
+			console.log(friend)
+			await this.userRepository.save(loadedUser)
+			await this.userRepository.save(friend)
+			return { status: true }
 		}
-		await this.userRepository.save(loadedUser)
-		await this.userRepository.save(friend)
-		return true
+		catch {
+			return { status: false }
+		}
 	}
 
 
@@ -323,6 +372,7 @@ export class UserService {
 			},
 			relations: {
 				friends: true,
+				blocked: true
 			},
 		})
 		if (!friend)
@@ -333,8 +383,20 @@ export class UserService {
 			},
 			relations: {
 				friends: true,
+				blocked: true
 			},
 		})
+		let index
+		if (loadedUser.blocked) {
+			index = loadedUser.blocked.findIndex(user => user.username === friend.username)
+			if (index !== -1)
+				return { status: 'false' }
+		}
+		if (friend.blocked) {
+			index = friend.blocked.findIndex(user => user.username === loadedUser.username)
+			if (index !== -1)
+				return { status: 'false' }
+		}
 		if (friend.login !== loadedUser.login) {
 			await loadedUser.friends.push(friend)
 			await friend.friends.push(loadedUser)
@@ -354,13 +416,10 @@ export class UserService {
 				friends: true,
 			},
 		})
-		// console.log(loadedUser)
 		const friends: string[] = [];
 		for (const k in loadedUser.friends) {
-			// console.log(loadedUser.friends[k])
 			friends.push(loadedUser.friends[k].username)
 		}
-		// console.log(friends)
 		return friends
 	}
 
@@ -382,23 +441,6 @@ export class UserService {
 
 	// }
 
-
-	async add_username(Login: string, newUsername: string) {
-		const user = await this.userRepository.findOneBy({
-			login: Login
-		})
-		const user_name_check = await this.userRepository.findOneBy({
-			username: newUsername
-		})
-		// if (user_name_check && user_name_check.username)
-		// {
-		// 	return false
-		// }
-		user.username = newUsername;
-		await this.userRepository.save(user);
-		return true
-	}
-
 	async GetUserData(Login: string) {
 		return (await this.userRepository.findOneBy({
 			login: Login
@@ -407,7 +449,7 @@ export class UserService {
 
 	async delete_all() {
 		this.userRepository.clear();
-		console.log('deleted');
+		//console.log('deleted');
 	}
 
 	async get_history(userName: string) {
@@ -425,6 +467,4 @@ export class UserService {
 		})
 		return ({ stats: user.userstats })
 	}
-
-	async
 }
