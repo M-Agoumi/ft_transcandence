@@ -32,9 +32,9 @@ export class UserController {
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,) { }
 
-	//////////////////////
-	/////////TWOFA////////
-	//////////////////////
+	//    ////////////////////
+	//   ///////TWOFA////////
+	//	////////////////////
 
 	@Post('sendEmail')
 	async sendEmail(@Body() emaildto: emailDto) {
@@ -58,15 +58,22 @@ export class UserController {
 		this.userservice.sendVerificationLink(emaildto.email, user.username);
 	}
 
-	@Post('confirm')
-	async confirm(@Body() tokendto: tokenDto, @GetUser() user: any) {
-		const email = await this.userservice.decodeConfirmationToken(tokendto.token);
-		return await this.userservice.confirmEmail(email);
+	@Get('twoFaInfo')
+	TwoFaInfo(@GetUser() user: any) {
+		const obj = {
+			TwoFa: user.twoFaActivated,
+			email: user.email,
+			emailConfirmed: user.isEmailConfirmed
+		}
+		// console.log(obj)
+		return (obj)
 	}
 
 	@Post('logout')
 	async logout(@GetUser() user: any) {
+		// console.log(user)
 		user.isEmailConfirmed = false
+		await this.userRepository.save(user)
 	}
 
 	// @Get('2fa')
@@ -74,9 +81,9 @@ export class UserController {
 	// 	return await this.userservice.activateTwoFa(user.login, emaildto.email)
 	// }
 
-	/////////////////////////
-	/////////USERNAME////////
-	/////////////////////////
+	//   ///////////////////////
+	//  ///////USERNAME////////
+	// ///////////////////////
 
 	@Post('username') //change username
 	async change_username(@GetUser() user: any, @Body() usernamedto: usernameDto) {
@@ -156,6 +163,13 @@ export class UserController {
 	@Get('avatar')	//get avatar
 	get_image(@GetUser() user: any, @Res() res) {
 		return (res.sendFile(join(process.cwd(), user.imagePath)))
+	}
+
+	@Get('avatarUser/:username')	//get avatar
+	async get_image_user(@GetUser() user: any, @Res() res, @Param() usernamedto: usernameDto) {
+		const us = await this.userRepository.findOneBy({ username: usernamedto.username })
+		if (us)
+			return (res.sendFile(join(process.cwd(), us.imagePath)))
 	}
 
 	@Get('all')

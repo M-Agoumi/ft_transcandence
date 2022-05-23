@@ -28,16 +28,16 @@ export class Convo {
 	@JoinTable()
 	users: UserEntity[];
 
-	@ManyToMany(type => UserEntity)
-	@JoinTable({ joinColumn: {} })
+	@ManyToMany(() => UserEntity)
+	@JoinTable()
 	banned: UserEntity[];
 
-	@ManyToMany(type => UserEntity)
-	@JoinTable({ joinColumn: {} })
+	@ManyToMany(() => UserEntity)
+	@JoinTable()
 	muted: UserEntity[];
 
-	@ManyToMany(type => Message)
-	@JoinTable({ joinColumn: {} })
+	@ManyToMany(() => Message)
+	@JoinTable()
 	messages: Message[];
 
 }

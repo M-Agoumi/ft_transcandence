@@ -82,8 +82,12 @@ export class ChatService {
 				},
 				relations: {
 					users: true,
+					banned: true
 				}
 			})
+			let index = loadedRoom.banned.findIndex(u => u.username === user.username)
+			if (index > -1)
+				return ({ status: 'user banned' })
 			if (!loadedRoom.users)
 				loadedRoom.users = []
 			loadedRoom.users.push(user)
@@ -110,9 +114,15 @@ export class ChatService {
 				messages: true,
 			}
 		})
-		const user = await this.userRepository.findOne({ where: { username: pushmsgdto.sender }, relations: { rooms: true } })
-		let msg: any = { content: pushmsgdto.content, sender: user }
-		const new_msg = await this.msgRepository.save(msg)
+		const user = await this.userRepository.findOne({ where: { username: pushmsgdto.sender } })
+		let msg: any = { content: pushmsgdto.content, sender: user.username }
+		if (!loadedRoom) {
+			console.log('room |', pushmsgdto.description, '| does not exist',)
+			return;
+		}
+		loadedRoom.messages.push(msg)
+		await this.msgRepository.save(msg)
+		await this.convoRepository.save(loadedRoom)
 	}
 
 	async leaveRoom(userName: string, room_description: string) {
@@ -393,8 +403,8 @@ export class ChatService {
 	}
 
 	async get_room_messages(description: string, current_user: string) {
-		let obj: { message: string, sender: string }
-		let arr: { message: string, sender: string }[]
+		let obj: { content: string, sender: string } = { content: "", sender: "" }
+		let arr: { content: string, sender: string }[] = []
 		const user = await this.userRepository.findOne({
 			where: {
 				username: current_user
@@ -411,12 +421,18 @@ export class ChatService {
 				messages: true
 			}
 		})
-		for (const k in loadedRoom.messages) {
-			obj.message = loadedRoom.messages[k].content
-			obj.sender = loadedRoom.messages[k].sender
-			let index = user.blocked.findIndex(u => u.username === obj.sender)
-			if (index === -1)
-				arr.push(obj)
+		if (loadedRoom) {
+			for (const k in loadedRoom.messages) {
+				// obj.content = loadedRoom.messages[k].content
+				// obj.sender = loadedRoom.messages[k].sender
+				obj = {
+					content: loadedRoom.messages[k].content,
+					sender: loadedRoom.messages[k].sender
+				}
+				let index = user.blocked.findIndex(u => u.username === obj.sender)
+				if (index === -1)
+					arr.push(obj)
+			}
 		}
 		return arr
 	}

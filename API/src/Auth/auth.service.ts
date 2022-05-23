@@ -23,6 +23,7 @@ export class AuthService {
 		}
 		let token: string = ""
 		let username = ""
+		let email = ""
 
 		token = await (this.jwt.sign(payload, {
 			expiresIn: '7d',
@@ -34,9 +35,11 @@ export class AuthService {
 		// }))
 		// //console.log(Login)
 		const user = await this.userRepository.findOneBy({ login: Login })
-		if (user)
+		if (user) {
 			username = user.username
-		return { access_token: token, username }
+			email = user.email
+		}
+		return { access_token: token, username, email: email }
 	}
 
 	///////////2FA/////////

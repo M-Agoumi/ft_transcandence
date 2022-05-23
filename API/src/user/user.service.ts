@@ -30,9 +30,6 @@ export class UserService {
 	) { }
 
 	async sendMail(mailOptions: any) {
-		// const auth = new GoogleAuth({
-		// 	scopes: 'https://www.googleapis.com/auth/cloud-platform'
-		// });
 		const oauth2Client = new OAuth2Client(this.config.get('CLIENT_ID'), this.config.get('CLIENT_SECRET'), this.config.get('REDIRECT_URL'))
 		oauth2Client.setCredentials({ refresh_token: this.config.get('REFRESH_TOKEN') })
 		this.access_token = oauth2Client.getAccessToken()
@@ -71,7 +68,7 @@ export class UserService {
 	}
 
 	async sendVerificationLink(Email: string, username: string) {
-		const payload: { email: string } = { email: Email };
+		const payload: { username: string } = { username: username };
 		const token = await this.jwt.sign(payload, {
 			secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
 			expiresIn: `${this.config.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
@@ -93,8 +90,9 @@ export class UserService {
 				secret: this.config.get('JWT2FA_VERIFICATION_TOKEN_SECRET'),
 			});
 
-			if (typeof payload === 'object' && 'email' in payload) {
-				return payload.email;
+			console.log(payload)
+			if (typeof payload === 'object' && 'username' in payload) {
+				return payload.username;
 			}
 			//console.log('error')
 		} catch (error) {
@@ -104,11 +102,13 @@ export class UserService {
 		}
 	}
 
-	async confirmEmail(Email: string) {
-		if (!Email)
+	async confirmEmail(username: string) {
+		if (!username)
 			return ({ status: 'token expired' });
 
-		const user = await this.userRepository.findOneBy({ email: Email });
+		const user = await this.userRepository.findOneBy({ username: username });
+		if (!user)
+			return ({ status: 'token expired' });
 		//console.log('>>>>>>>', user, '<<<<<<<<')
 		if (user.isEmailConfirmed) {
 			//console.log('email already confirmed')
@@ -437,11 +437,6 @@ export class UserService {
 		}
 		return {}
 	}
-
-	// async add_friend(login: string)
-	// {
-
-	// }
 
 	async GetUserData(Login: string) {
 		return (await this.userRepository.findOneBy({

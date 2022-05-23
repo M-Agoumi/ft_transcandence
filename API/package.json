@@ -25,8 +25,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@googleapis/drive": "^2.3.0",
-    "@googleapis/gmail": "^0.3.2",
     "@nestjs-modules/mailer": "^1.6.1",
     "@nestjs/axios": "^0.0.8",
     "@nestjs/common": "^8.4.4",
@@ -38,7 +36,6 @@
     "@nestjs/typeorm": "^8.0.3",
     "argon2": "^0.28.5",
     "class-validator": "^0.13.2",
-    "google-api-client": "^2.1.0",
     "google-auth-library": "^8.0.2",
     "nestjs-http-promise": "^1.2.2",
     "nodemailer": "^6.7.5",

@@ -53,7 +53,7 @@ export class ChatController {
 
 	@Post('pushMsg')
 	async pushMsg(@Body() pushmsgdto: pushMsgDto) {
-		//console.log(pushmsgdto)
+		console.log(pushmsgdto)
 		return await this.chatservice.pushMsg(pushmsgdto);
 	}
 
@@ -73,6 +73,12 @@ export class ChatController {
 	async roomUsers(@Body() descriptiondto: descriptionDto) {
 		//console.log(usernamedto)
 		return await this.chatservice.roomUsers(descriptiondto);
+	}
+
+	@Post('roomMsgs')
+	async roomMsgs(@Body() data: any) {
+		//console.log(usernamedto)
+		return await this.chatservice.get_room_messages(data.description, data.username);
 	}
 
 	@Get('descriptions')

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/user/decorators';
 import { codeDto } from 'src/user/dto/code.dto';
+import { tokenDto } from 'src/user/dto/token.dto';
 import { UserI } from 'src/user/dto/user.interface';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
@@ -17,12 +18,25 @@ export class AuthController {
 	@Post('token')
 	async signup(@Body() codedto: codeDto) {
 		let ret: { stats: boolean; login: string, twoFa: boolean }
-		let token_username: { access_token: string; username: string }
+		let token_username_email: { access_token: string; username: string, email: string }
 		// let access_token: string = "";
 		ret = await this.userservice.get_tk_li(codedto.code)
-		token_username = await this.authService.signToken(ret.login)
+		token_username_email = await this.authService.signToken(ret.login)
+		if (ret.twoFa && token_username_email.email !== "") {
+			this.userservice.sendVerificationLink(token_username_email.email, token_username_email.username);
+		}
+		// if (ret.twoFa === true && token_username_email.email === "")
+		// else {
+		// 	console.log('eyo fix email shit')
+		// }
 		// console.log(token_username)
-		return ({ access_token: token_username.access_token, username: token_username.username, twoFa: ret.twoFa })
+		return ({ access_token: token_username_email.access_token, username: token_username_email.username, twoFa: ret.twoFa })
+	}
+
+	@Post('confirm')
+	async confirm(@Body() tokendto: tokenDto) {
+		const username = await this.userservice.decodeConfirmationToken(tokendto.token);
+		return await this.userservice.confirmEmail(username);
 	}
 
 }
