@@ -63,6 +63,7 @@ export class UserService {
 		if (!user)
 			return (false)
 		user.twoFaActivated = false
+		user.isEmailConfirmed = false
 		await this.userRepository.save(user)
 		return (true)
 	}
@@ -211,12 +212,13 @@ export class UserService {
 			twoFa: false
 		}
 		try {
+			console.log(code)
 			const data = await this.httpService.post('https://api.intra.42.fr/oauth/token', {
 				"grant_type": "authorization_code",
 				"client_id": process.env.FORTYTWO_CLIENT_ID,
 				"client_secret": process.env.FORTYTWO_CLIENT_SECRET,
 				"code": code,
-				"redirect_uri": "http://10.11.100.91:4200/next"
+				"redirect_uri": "http://10.11.100.42:4200/next"
 			}).toPromise()
 			const token = data.data.access_token;
 			const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
@@ -249,13 +251,13 @@ export class UserService {
 			}
 			catch (error) {
 				ret.stats = false;
-				//console.log(error)
+				console.log(error)
 				//console.log('in3l1')
 			}
 		}
 		catch (error) {
 			ret.stats = false;
-			//console.log('in3l2')
+			console.log('in3l2')
 			return ret
 		}
 		// (ret.username === undefined || ret.username === null) ? ret.username = "": 0

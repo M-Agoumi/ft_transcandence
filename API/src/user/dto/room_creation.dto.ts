@@ -11,10 +11,6 @@ export class roomCreationDto {
 	// @IsNotEmpty()
 	password: string
 
-	@IsString()
-	@IsNotEmpty()
-	username: string
-
 	@IsBoolean()
 	@IsNotEmpty()
 	mode: boolean

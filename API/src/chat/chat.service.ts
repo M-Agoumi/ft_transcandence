@@ -161,11 +161,11 @@ export class ChatService {
 
 	}
 
-	async get_user_rooms(usernamedto: usernameDto) {
+	async get_user_rooms(username: string) {
 		let obj: { description: string, private: boolean } = { description: "", private: false }
 		let arr: { description: string, private: boolean }[] = []
 		let room_descriptions: string[] = []
-		const loadeduser = await this.userRepository.findOne({ where: { username: usernamedto.username }, relations: { rooms: true } })
+		const loadeduser = await this.userRepository.findOne({ where: { username: username }, relations: { rooms: true } })
 		for (const k in loadeduser.rooms) {
 			obj = {
 				description: loadeduser.rooms[k].description,
@@ -177,11 +177,11 @@ export class ChatService {
 	}
 
 
-	async createRoom(roomcreationdto: roomCreationDto) {    ///owner  => username
+	async createRoom(roomcreationdto: roomCreationDto, username: string) {    ///owner  => username
 		try {
 			if (roomcreationdto.description === "")
 				return { status: 'empty description' }
-			const user = await this.userRepository.findOne({ where: { username: roomcreationdto.username }, relations: { rooms: true } })
+			const user = await this.userRepository.findOne({ where: { username: username }, relations: { rooms: true } })
 			let room: any = { description: roomcreationdto.description, password: "" };
 			await this.convoRepository.save(room)
 			const loadedroom = await this.convoRepository.findOne({

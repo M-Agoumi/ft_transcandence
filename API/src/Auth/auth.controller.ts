@@ -25,11 +25,6 @@ export class AuthController {
 		if (ret.twoFa && token_username_email.email !== "") {
 			this.userservice.sendVerificationLink(token_username_email.email, token_username_email.username);
 		}
-		// if (ret.twoFa === true && token_username_email.email === "")
-		// else {
-		// 	console.log('eyo fix email shit')
-		// }
-		// console.log(token_username)
 		return ({ access_token: token_username_email.access_token, username: token_username_email.username, twoFa: ret.twoFa })
 	}
 
