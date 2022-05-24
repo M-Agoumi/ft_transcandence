@@ -97,4 +97,13 @@ export class ChatController {
 		return await this.chatservice.get_room_descriptions_private();
 	}
 
+	@Post('createDm')
+	create_dm(@GetUser() user: any, @Body() usernamedto: usernameDto) {
+		this.chatservice.createDm(user.username, usernamedto.username)
+	}
+
+	@Post('findDm')
+	findDm(@GetUser() user: any, @Body() usernamedto: usernameDto) {
+		this.chatservice.find_dm(user.username, usernamedto.username)
+	}
 }

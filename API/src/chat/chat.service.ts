@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository, } from '@nestjs/typeorm';
-import passport from 'passport';
+import passport, { use } from 'passport';
 import { relative } from 'path';
 import { Repository } from 'typeorm';
 import * as argon from "argon2"
@@ -403,8 +403,10 @@ export class ChatService {
 	}
 
 	async get_room_messages(description: string, current_user: string) {
-		let obj: { content: string, sender: string } = { content: "", sender: "" }
-		let arr: { content: string, sender: string }[] = []
+		let obj: { content: string, sender: string, print: boolean } = { content: "", sender: "", print: true }
+		let arr: { content: string, sender: string, print: boolean }[] = []
+		let prev: string = ""
+		let print = true
 		const user = await this.userRepository.findOne({
 			where: {
 				username: current_user
@@ -423,23 +425,87 @@ export class ChatService {
 		})
 		if (loadedRoom) {
 			for (const k in loadedRoom.messages) {
-				// obj.content = loadedRoom.messages[k].content
-				// obj.sender = loadedRoom.messages[k].sender
+				print = true
+				if (loadedRoom.messages[k].sender === prev) {
+					print = false
+				}
 				obj = {
 					content: loadedRoom.messages[k].content,
-					sender: loadedRoom.messages[k].sender
+					sender: loadedRoom.messages[k].sender,
+					print: print
+
 				}
 				let index = user.blocked.findIndex(u => u.username === obj.sender)
 				if (index === -1)
 					arr.push(obj)
+				prev = loadedRoom.messages[k].sender
 			}
 		}
 		return arr
+	}
+
+	async createDm(current_user: string, friend_username: string) {
+		const user = await this.userRepository.findOne({
+			where: {
+				username: current_user
+			},
+			relations: {
+				rooms: true
+			}
+		})
+		const friend = await this.userRepository.findOne({
+			where: {
+				username: friend_username
+			},
+			relations: {
+				rooms: true
+			}
+		})
+		let room = await this.convoRepository.create()
+		room.description = `${user.username}-${friend.username}`
+		room.owner = [user, friend]
+		const new_room = await this.convoRepository.save(room)
+		friend.rooms.push(new_room)
+		user.rooms.push(new_room)
+		this.userRepository.save(user)
+		this.userRepository.save(friend)
 	}
 
 	async get_rooms() {
 		return (this.convoRepository.find(
 			{ relations: { administrators: true, users: true, banned: true, muted: true, messages: true, owner: true } }
 		))
+	}
+
+	async find_dm(current_user: string, friend_username: string) {
+		const user = await this.userRepository.findOne({
+			where: {
+				username: current_user
+			},
+			relations: {
+				rooms: true
+			}
+		})
+		const friend = await this.userRepository.findOne({
+			where: {
+				username: friend_username
+			},
+			relations: {
+				rooms: true
+			}
+		})
+		let room
+		const all = await this.convoRepository.find({ relations: { owner: true } })
+		for (const i in all) {
+			if (all[i].owner.length === 2) {
+				if (all[i].description === `${user.username}-${friend.username}` || all[i].description === `${friend.username}-${user.username}`) {
+					room = all[i]
+					break;
+				}
+			}
+		}
+		this.get_room_messages(room.description, user.username)
+		console.log(room);
+
 	}
 }
