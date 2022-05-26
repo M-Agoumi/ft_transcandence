@@ -10,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import AVatar from './entities/file.entity';
 import { createTransport } from 'nodemailer';
 import { OAuth2Client } from 'google-auth-library';
+import { ChatService } from 'src/chat/chat.service';
+import { Convo } from './entities/conversation.entity';
 
 
 
@@ -21,11 +23,14 @@ export class UserService {
 	constructor(
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,
+		@InjectRepository(Convo)
+		private readonly convoRepository: Repository<Convo>,
 		private jwt: JwtService,
 		private config: ConfigService,
 		@InjectRepository(AVatar)
 		private readonly avatarRepo: Repository<AVatar>,
 		private readonly httpService: HttpService,
+		private chatservice: ChatService
 
 	) { }
 
@@ -196,13 +201,6 @@ export class UserService {
 
 	}
 
-	// async activateTwoFa(Login: string, Email: string) {
-	// 	const user = await this.userRepository.findOneBy({ login: Login })
-	// 	user.email = Email;
-	// 	user.twoFaActivated = true;
-	// 	this.userRepository.save(user)
-	// }
-
 	async get_tk_li(code: string) {
 		let token = "";
 		let ret = {
@@ -263,32 +261,6 @@ export class UserService {
 		// (ret.username === undefined || ret.username === null) ? ret.username = "": 0
 		return (ret)
 	}
-
-	// async check_if_token_valid(token: string) {
-	// 	let ret = {
-	// 		login: "",
-	// 		token: "",
-	// 		stats: false,
-	// 	}
-	// 	try {
-	// 		const info = await this.httpService.get('https://api.intra.42.fr/v2/me', {
-	// 			headers: {
-	// 				'Authorization': `Bearer ${token}`
-	// 			}
-	// 		}).toPromise()
-	// 		ret.login = info.data.login;
-	// 		ret.token = token;
-	// 		// //console.log(ret.login)
-	// 		// //console.log(ret.token)
-	// 		ret.stats = true
-	// 	}
-	// 	catch (error) {
-	// 		// //console.log(error)
-	// 		ret.stats = false
-	// 		return ret
-	// 	}
-	// 	return (ret)
-	// }
 
 	async block_user(blocked_username: string, current_username: string) {
 		try {
@@ -358,7 +330,26 @@ export class UserService {
 				if (index > -1)
 					friend.friends.splice(index, 1)
 			}
-			console.log(friend)
+			let room = await this.convoRepository.findOne({
+				where: {
+					description: `${current_username}-${removed_friend}`
+				},
+				relations: {
+					messages: true
+				}
+			})
+			if (!room) {
+
+				room = await this.convoRepository.findOne({
+					where: {
+						description: `${removed_friend}-${current_username}`
+					},
+					relations: {
+						messages: true
+					}
+				})
+			}
+			await this.convoRepository.remove(room)
 			await this.userRepository.save(loadedUser)
 			await this.userRepository.save(friend)
 			return { status: true }
@@ -401,6 +392,7 @@ export class UserService {
 			if (index !== -1)
 				return { status: 'false' }
 		}
+		await this.chatservice.createDm(loadedUser.username, friend_username)
 		if (friend.login !== loadedUser.login) {
 			await loadedUser.friends.push(friend)
 			await friend.friends.push(loadedUser)
@@ -466,4 +458,6 @@ export class UserService {
 		})
 		return ({ stats: user.userstats })
 	}
+
+
 }

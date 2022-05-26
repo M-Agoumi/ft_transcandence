@@ -50,7 +50,7 @@ export class UserEntity {
 	convo_administrators: Convo[]
 
 
-	@OneToMany(() => Match, (history) => history.player1)
+	@ManyToMany(() => Match)
 	history: Match[]
 
 

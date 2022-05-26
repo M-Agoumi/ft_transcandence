@@ -15,6 +15,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { matches } from 'class-validator';
 import { Convo } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
+import { ChatService } from 'src/chat/chat.service';
 
 
 @Module({
@@ -39,6 +40,6 @@ import { Message } from './entities/message.entity';
 
   ],
   controllers: [UserController],
-  providers: [UserHelperService, ConfigService, UserService], exports: [UserService]
+  providers: [UserHelperService, ConfigService, UserService, ChatService], exports: [UserService]
 })
 export class UserModule { }

@@ -48,6 +48,7 @@ export class ChatController {
 
 	@Post('leaveRoom')
 	async leaveRoom(@Body() descriptiondto: descriptionDto, @GetUser() user: any) {
+		console.log(descriptiondto)
 		return await this.chatservice.leaveRoom(user.username, descriptiondto.description)
 	}
 
@@ -87,11 +88,6 @@ export class ChatController {
 		return await this.chatservice.get_room_descriptions();
 	}
 
-	// @Post('delete')
-	// async delete() {
-	// 	await this.chatservice.delete_all();
-	// }
-
 	@Get('descriptions/private')
 	async get_descriptions_private() {
 		return await this.chatservice.get_room_descriptions_private();
@@ -104,6 +100,38 @@ export class ChatController {
 
 	@Post('findDm')
 	findDm(@GetUser() user: any, @Body() usernamedto: usernameDto) {
-		this.chatservice.find_dm(user.username, usernamedto.username)
+		return this.chatservice.find_dm(user.username, usernamedto.username)
 	}
+
+	@Post('pushDm')
+	pushDm(@GetUser() user: any, @Body() pushMsgdto: pushMsgDto) {
+		console.log(pushMsgdto)
+		this.chatservice.pushDm(pushMsgdto, user.username)
+	}
+
+	@Post('ad_ow')
+	chech_if_admin_or_owner(@GetUser() user: any, @Body() descriptiondto: descriptionDto) {
+		console.log(descriptiondto)
+		this.chatservice.chech_if_admin_or_owner(descriptiondto.description, user.username)
+	}
+
+	@Post('bann')
+	bann(@GetUser() user: any, @Body() descriptiondto: descriptionDto, usernamedto: usernameDto) {
+		console.log(descriptiondto, usernamedto)
+		this.chatservice.bann_user(descriptiondto.description, usernamedto.username)
+	}
+
+	@Post('mute')
+	mute(@GetUser() user: any, @Body() descriptiondto: descriptionDto, usernamedto: usernameDto) {
+		console.log(descriptiondto, usernamedto)
+		this.chatservice.mute_user(descriptiondto.description, usernamedto.username)
+	}
+
+	@Post('unmute')
+	unmute(@GetUser() user: any, @Body() descriptiondto: descriptionDto, usernamedto: usernameDto) {
+		console.log(descriptiondto, usernamedto)
+		this.chatservice.unmute_user(descriptiondto.description, usernamedto.username)
+	}
+
+
 }

@@ -127,7 +127,6 @@ export class ChatService {
 
 	async leaveRoom(userName: string, room_description: string) {
 		try {
-
 			const user = await this.userRepository.findOne({
 				where: { username: userName }, relations: {
 					rooms: true
@@ -139,24 +138,38 @@ export class ChatService {
 				},
 				relations: {
 					users: true,
+					administrators: true,
+					owner: true
 				}
 			})
+			//remove from users list
 			let index = loadedRoom.users.findIndex(i => i.username === user.username)
 			if (index > -1)
 				loadedRoom.users.splice(index, 1)
+			index = loadedRoom.owner.findIndex(i => i.username === user.username)
+			//remove from owner
+			if (index > -1)
+				loadedRoom.owner.splice(index, 1)
+
+			//remove from administrator list
 			index = loadedRoom.administrators.findIndex(i => i.username === user.username)
 			if (index > -1)
 				loadedRoom.administrators.splice(index, 1)
+
+
 			await this.convoRepository.save(loadedRoom)
+
+			// remove room from user rooms list
 			index = user.rooms.findIndex(room => room.description === loadedRoom.description)
 			if (index > -1)
 				user.rooms.splice(index, 1)
+
 			await this.userRepository.save(user)
-			return ({ status: 'end' })
+			return ({ status: true })
 		}
 		catch (err) {
-			//console.log(err)
-			return ({ status: 'something went wrong' })
+			// console.log(err)
+			return ({ status: false })
 		}
 
 	}
@@ -167,11 +180,14 @@ export class ChatService {
 		let room_descriptions: string[] = []
 		const loadeduser = await this.userRepository.findOne({ where: { username: username }, relations: { rooms: true } })
 		for (const k in loadeduser.rooms) {
-			obj = {
-				description: loadeduser.rooms[k].description,
-				private: loadeduser.rooms[k].private
+			let dm = await this.convoRepository.findOne({ where: { description: loadeduser.rooms[k].description }, relations: { owner: true } })
+			if (dm.owner.length < 2) {
+				obj = {
+					description: loadeduser.rooms[k].description,
+					private: loadeduser.rooms[k].private
+				}
+				arr.push(obj)
 			}
-			arr.push(obj)
 		}
 		return arr
 	}
@@ -204,9 +220,7 @@ export class ChatService {
 			if (roomcreationdto.password !== "") {
 				loadedroom.password = await argon.hash(roomcreationdto.password)
 			}
-			//console.log('>>>>>>>>>', loadedroom, '<<<<<<<<<<<')
 			await this.convoRepository.save(loadedroom)
-			//console.log('after')
 			if (!user.rooms)
 				user.rooms = []
 			user.rooms.push(loadedroom)
@@ -214,7 +228,6 @@ export class ChatService {
 			return { status: 'success' }
 		}
 		catch (err) {
-			//console.log(err)
 			return { status: 'description already in use' }
 		}
 	}
@@ -222,11 +235,9 @@ export class ChatService {
 	async get_room_descriptions() {
 		let obj: { description: string, hasPass: boolean } = { description: "", hasPass: false }
 		let arr: { description: string, hasPass: boolean }[] = []
-		const rooms = await this.convoRepository.find()
-		// let descriptions: string[] = []
+		const rooms = await this.convoRepository.find({ relations: { owner: true } })
 		for (const k in rooms) {
-			// //console.log(rooms[k])
-			if (!rooms[k].private) {
+			if (!rooms[k].private && rooms[k].owner.length < 2) {
 				obj = {
 					description: rooms[k].description,
 					hasPass: false
@@ -235,7 +246,6 @@ export class ChatService {
 					obj.hasPass = true
 				arr.push(obj)
 			}
-			// descriptions.push(rooms[k].description)
 		}
 		return arr
 	}
@@ -243,10 +253,9 @@ export class ChatService {
 	async get_room_descriptions_private() {
 		let obj: { description: string, hasPass: boolean } = { description: "", hasPass: false }
 		let arr: { description: string, hasPass: boolean }[] = []
-		const rooms = await this.convoRepository.find()
-		// let descriptions: string[] = []
+		const rooms = await this.convoRepository.find({ relations: { owner: true } })
 		for (const k in rooms) {
-			if (rooms[k].private) {
+			if (rooms[k].private && rooms[k].owner.length < 2) {
 				obj = {
 					description: rooms[k].description,
 					hasPass: false
@@ -255,7 +264,6 @@ export class ChatService {
 					obj.hasPass = true
 				arr.push(obj)
 			}
-			// descriptions.push(rooms[k].description)
 		}
 		return arr
 	}
@@ -341,13 +349,11 @@ export class ChatService {
 		room.banned.push(user)
 		this.convoRepository.save(room)
 		let repo = this.convoRepository
-		//console.log(room)
 		setTimeout(function () {
 			const index = room.banned.indexOf(user)
 			if (index > -1)
 				room.banned.splice(index, 1)
 			repo.save(room)
-			//console.log('end', room)
 		}, 10000)
 	}
 
@@ -359,7 +365,6 @@ export class ChatService {
 
 	async roomUsers(descriptiondto: descriptionDto) {
 		let users: string[] = []
-		console.log(descriptiondto);
 
 
 		const room = await this.convoRepository.findOne({
@@ -392,6 +397,22 @@ export class ChatService {
 		})
 		room.muted.push(user)
 		this.convoRepository.save(room)
+	}
+
+	async unmute_user(room_description: string, muted_username: string) {
+		const user = await this.userRepository.findOneBy({ username: muted_username })
+		const room = await this.convoRepository.findOne({
+			where: {
+				description: room_description
+			},
+			relations: {
+				muted: true
+			}
+		})
+		let index = room.muted.findIndex(u => u.username === muted_username)
+		if (index > -1)
+			room.muted.splice(index, 1)
+
 	}
 
 	async isPrivate(description: string) {
@@ -478,34 +499,87 @@ export class ChatService {
 	}
 
 	async find_dm(current_user: string, friend_username: string) {
-		const user = await this.userRepository.findOne({
+		let room = await this.convoRepository.findOne({
 			where: {
-				username: current_user
+				description: `${current_user}-${friend_username}`
 			},
 			relations: {
-				rooms: true
+				messages: true
 			}
 		})
-		const friend = await this.userRepository.findOne({
-			where: {
-				username: friend_username
-			},
-			relations: {
-				rooms: true
-			}
-		})
-		let room
-		const all = await this.convoRepository.find({ relations: { owner: true } })
-		for (const i in all) {
-			if (all[i].owner.length === 2) {
-				if (all[i].description === `${user.username}-${friend.username}` || all[i].description === `${friend.username}-${user.username}`) {
-					room = all[i]
-					break;
+		if (!room) {
+			room = await this.convoRepository.findOne({
+				where: {
+					description: `${friend_username}-${current_user}`
+				},
+				relations: {
+					messages: true
 				}
-			}
+			})
 		}
-		this.get_room_messages(room.description, user.username)
-		console.log(room);
-
+		let ret = await this.get_room_messages(room.description, current_user)
+		for (let i in ret) {
+			ret[i].print = false
+		}
+		return ret
 	}
+
+	async pushDm(pushmsgdto: pushMsgDto, current_user: string) {
+		let msg: any = { content: pushmsgdto.content, sender: pushmsgdto.sender }
+		let new_msg = await this.msgRepository.save(msg)
+		const room_second_user = pushmsgdto.description
+
+		const user = await this.userRepository.findOne({ where: { username: current_user }, relations: { rooms: true } })
+
+		let index = user.rooms.findIndex(u => u.description === `${room_second_user}-${user.username}`)
+		let index2 = user.rooms.findIndex(u => u.description === `${user.username}-${room_second_user}`)
+		let i = index > -1 ? index : index2
+		let room = await this.convoRepository.findOne({
+			where: {
+				description: `${current_user}-${room_second_user}`
+			},
+			relations: {
+				messages: true
+			}
+		})
+		if (!room) {
+
+			room = await this.convoRepository.findOne({
+				where: {
+					description: `${room_second_user}-${current_user}`
+				},
+				relations: {
+					messages: true
+				}
+			})
+		}
+
+		if (!room.messages)
+			room.messages = []
+		room.messages.push(new_msg)
+		await this.msgRepository.save(room.messages)
+		user.rooms[i] = await this.convoRepository.save(room)
+		await this.userRepository.save(user)
+	}
+
+	async chech_if_admin_or_owner(description: string, current_username: string) {
+		const obj = { administrator: false, owner: false }
+		const loadedRoom = await this.convoRepository.findOne({
+			where: {
+				description: description
+			},
+			relations: {
+				owner: true,
+				administrators: true
+			}
+		})
+		let index = loadedRoom.owner.findIndex(u => u.username === current_username)
+		if (index > -1)
+			obj.administrator = true
+		index = loadedRoom.administrators.findIndex(u => u.username === current_username)
+		if (index > -1)
+			obj.owner = true
+		return (obj)
+	}
+
 }
