@@ -3,7 +3,6 @@ import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseGuards, UseIn
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UserI } from './dto/user.interface';
-import { UserHelperService } from './user-helper/user-helper.service';
 import { UserService } from './user.service';
 import { GetUser } from './decorators/user.decorator'
 import { Profile } from 'passport';
@@ -23,12 +22,12 @@ import { Repository } from 'typeorm';
 import { join } from 'path';
 import { emailDto } from './dto/email.dto';
 import { usernameDto } from './dto/username.dto';
-import { tokenDto } from './dto/token.dto';
+import { tokenDto } from '../Auth/dto/token.dto';
 
 @UseGuards(My_guard)
 @Controller('users')
 export class UserController {
-	constructor(private userservice: UserService, private userHelper: UserHelperService,
+	constructor(private userservice: UserService,
 		@InjectRepository(UserEntity)
 		private readonly userRepository: Repository<UserEntity>,) { }
 

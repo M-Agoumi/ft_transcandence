@@ -1,11 +1,10 @@
 import { Body, Controller, Post, UseGuards, Get } from '@nestjs/common';
 import { My_guard } from 'src/guard';
 import { GetUser } from 'src/user/decorators';
-import { chatOpDto } from 'src/user/dto/chat_op.dto';
-import { descriptionDto } from 'src/user/dto/description.dto';
-import { passwordVerificationDto } from 'src/user/dto/password_verification.dto';
-import { pushMsgDto } from 'src/user/dto/push_msg.dto';
-import { roomCreationDto } from 'src/user/dto/room_creation.dto';
+import { descriptionDto } from 'src/chat/dto/description.dto';
+import { passwordVerificationDto } from 'src/chat/dto/password_verification.dto';
+import { pushMsgDto } from 'src/chat/dto/push_msg.dto';
+import { roomCreationDto } from 'src/chat/dto/room_creation.dto';
 import { usernameDto } from 'src/user/dto/username.dto';
 import { ChatService } from './chat.service';
 
@@ -36,13 +35,11 @@ export class ChatController {
 
 	@Post('verify_password')
 	async verify_password(@Body() passwordverificationdto: passwordVerificationDto) {
-		//console.log(passwordverificationdto)
 		return await this.chatservice.verify_password(passwordverificationdto)
 	}
 
 	@Post('joinRoom')
 	async joinRoom(@Body() descriptiondto: descriptionDto, @GetUser() user: any) {
-		// console.log(chatopdto)
 		return await this.chatservice.joinRoom(user.username, descriptiondto.description)
 	}
 
@@ -55,31 +52,26 @@ export class ChatController {
 
 	@Post('pushMsg')
 	async pushMsg(@Body() pushmsgdto: pushMsgDto) {
-		// console.log(pushmsgdto)
 		return await this.chatservice.pushMsg(pushmsgdto);
 	}
 
 	@Post('isPrivate')
 	async isPrivate(@Body() descriptiondto: descriptionDto) {
-		//console.log(descriptiondto)
 		return await this.chatservice.isPrivate(descriptiondto.description);
 	}
 
 	@Post('my_rooms')
 	async get_room_descriptions(@GetUser() user: any) {
-		//console.log(usernamedto)
 		return await this.chatservice.get_user_rooms(user.username);
 	}
 
 	@Post('roomUsers')
 	async roomUsers(@Body() descriptiondto: descriptionDto) {
-		//console.log(usernamedto)
 		return await this.chatservice.roomUsers(descriptiondto);
 	}
 
 	@Post('roomMsgs')
 	async roomMsgs(@GetUser() user: any, @Body() descriptiondto: descriptionDto) {
-		//console.log(usernamedto)
 		return await this.chatservice.get_room_messages(descriptiondto.description, user.username);
 	}
 

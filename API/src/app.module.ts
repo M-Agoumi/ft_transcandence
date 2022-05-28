@@ -9,8 +9,8 @@ import { HttpModule } from 'nestjs-http-promise'
 import AVatar from './user/entities/file.entity';
 import { AuthModule } from './Auth/auth.module';
 import { appController } from './app.controller';
-import { Convo } from './user/entities/conversation.entity';
-import { Message } from './user/entities/message.entity';
+import { Convo } from './chat/entities/conversation.entity';
+import { Message } from './chat/entities/message.entity';
 import { ChatModule } from './chat/chat.module';
 
 @Module({

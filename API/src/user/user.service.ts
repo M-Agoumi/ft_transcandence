@@ -11,7 +11,7 @@ import AVatar from './entities/file.entity';
 import { createTransport } from 'nodemailer';
 import { OAuth2Client } from 'google-auth-library';
 import { ChatService } from 'src/chat/chat.service';
-import { Convo } from './entities/conversation.entity';
+import { Convo } from '../chat/entities/conversation.entity';
 
 
 

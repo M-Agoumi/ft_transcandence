@@ -4,14 +4,14 @@ import passport, { use } from 'passport';
 import { relative } from 'path';
 import { Repository } from 'typeorm';
 import * as argon from "argon2"
-import { Convo } from '../user/entities/conversation.entity';
+import { Convo } from './entities/conversation.entity';
 import { UserEntity } from '../user/entities/user.entity';
-import { Message } from 'src/user/entities/message.entity';
-import { roomCreationDto } from 'src/user/dto/room_creation.dto';
-import { passwordVerificationDto } from 'src/user/dto/password_verification.dto';
-import { pushMsgDto } from 'src/user/dto/push_msg.dto';
+import { roomCreationDto } from 'src/chat/dto/room_creation.dto';
+import { passwordVerificationDto } from 'src/chat/dto/password_verification.dto';
+import { pushMsgDto } from 'src/chat/dto/push_msg.dto';
 import { usernameDto } from 'src/user/dto/username.dto';
-import { descriptionDto } from 'src/user/dto/description.dto';
+import { descriptionDto } from 'src/chat/dto/description.dto';
+import { Message } from './entities/message.entity';
 
 @Injectable()
 export class ChatService {

@@ -1,6 +1,6 @@
 import { JoinTable, Entity, PrimaryGeneratedColumn, ManyToMany, OneToMany, Column, OneToOne, JoinColumn } from 'typeorm';
 import { Message } from './message.entity';
-import { UserEntity } from './user.entity'
+import { UserEntity } from '../../user/entities/user.entity'
 
 @Entity()
 export class Convo {

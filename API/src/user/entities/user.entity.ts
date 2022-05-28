@@ -2,7 +2,7 @@ import { OneToMany, ManyToOne, JoinTable, Entity, ManyToMany, PrimaryGeneratedCo
 import AVatar from './file.entity';
 import { Match } from './match.entity';
 import { UserStats } from './stats.entity';
-import { Convo } from './conversation.entity';
+import { Convo } from '../../chat/entities/conversation.entity';
 
 @Entity()
 export class UserEntity {
