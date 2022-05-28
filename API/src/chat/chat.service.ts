@@ -12,6 +12,7 @@ import { pushMsgDto } from 'src/chat/dto/push_msg.dto';
 import { usernameDto } from 'src/user/dto/username.dto';
 import { descriptionDto } from 'src/chat/dto/description.dto';
 import { Message } from './entities/message.entity';
+import { stat } from 'fs';
 
 @Injectable()
 export class ChatService {
@@ -175,16 +176,30 @@ export class ChatService {
 	}
 
 	async get_user_rooms(username: string) {
-		let obj: { description: string, private: boolean } = { description: "", private: false }
-		let arr: { description: string, private: boolean }[] = []
+		let obj: { description: string, private: boolean, status: string } = { description: "", private: false, status: "user" }
+		let arr: { description: string, private: boolean, status: string }[] = []
 		let room_descriptions: string[] = []
-		const loadeduser = await this.userRepository.findOne({ where: { username: username }, relations: { rooms: true } })
+		let stats = "user"
+		const loadeduser = await this.userRepository.findOne({
+			where: { username: username },
+			relations: {
+				rooms: true,
+			}
+		})
 		for (const k in loadeduser.rooms) {
-			let dm = await this.convoRepository.findOne({ where: { description: loadeduser.rooms[k].description }, relations: { owner: true } })
-			if (dm.owner.length < 2) {
+			let room = await this.convoRepository.findOne({ where: { description: loadeduser.rooms[k].description }, relations: { owner: true, administrators: true } })
+			if (room.owner.length < 2) {
+				let index = room.administrators.findIndex(u => u.username === username)
+				if (index !== -1)
+					stats = "administrator"
+				index = room.owner.findIndex(u => u.username === username)
+				if (index !== -1)
+					stats = "owner"
 				obj = {
 					description: loadeduser.rooms[k].description,
-					private: loadeduser.rooms[k].private
+					private: loadeduser.rooms[k].private,
+					status: stats
+
 				}
 				arr.push(obj)
 			}
@@ -336,25 +351,33 @@ export class ChatService {
 	// }
 
 	async bann_user(room_description: string, banned_username: string) {
-		const user = await this.userRepository.findOneBy({ username: banned_username })
-		const room = await this.convoRepository.findOne({
-			where: {
-				description: room_description
-			},
-			relations: {
-				banned: true
-			}
-		})
-		this.leaveRoom(user.username, room_description)
-		room.banned.push(user)
-		this.convoRepository.save(room)
-		let repo = this.convoRepository
-		setTimeout(function () {
-			const index = room.banned.indexOf(user)
-			if (index > -1)
-				room.banned.splice(index, 1)
-			repo.save(room)
-		}, 10000)
+		try {
+
+			const user = await this.userRepository.findOneBy({ username: banned_username })
+			const room = await this.convoRepository.findOne({
+				where: {
+					description: room_description
+				},
+				relations: {
+					banned: true
+				}
+			})
+			this.leaveRoom(user.username, room_description)
+			room.banned.push(user)
+			this.convoRepository.save(room)
+			let repo = this.convoRepository
+			setTimeout(function () {
+				const index = room.banned.indexOf(user)
+				if (index > -1)
+					room.banned.splice(index, 1)
+				repo.save(room)
+				console.log('unbanned')
+			}, 300000)
+			return { stats: true }
+		}
+		catch (err) {
+			return { stats: false }
+		}
 	}
 
 	async remove_from_banned(user: UserEntity, convo: Convo) {

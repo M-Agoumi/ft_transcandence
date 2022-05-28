@@ -4,6 +4,7 @@ import { GetUser } from 'src/user/decorators';
 import { descriptionDto } from 'src/chat/dto/description.dto';
 import { passwordVerificationDto } from 'src/chat/dto/password_verification.dto';
 import { pushMsgDto } from 'src/chat/dto/push_msg.dto';
+import { chatOpDto } from 'src/chat/dto/chat_op.dto';
 import { roomCreationDto } from 'src/chat/dto/room_creation.dto';
 import { usernameDto } from 'src/user/dto/username.dto';
 import { ChatService } from './chat.service';
@@ -107,22 +108,22 @@ export class ChatController {
 		this.chatservice.chech_if_admin_or_owner(descriptiondto.description, user.username)
 	}
 
-	@Post('bann')
-	bann(@GetUser() user: any, @Body() descriptiondto: descriptionDto, usernamedto: usernameDto) {
-		console.log(descriptiondto, usernamedto)
-		this.chatservice.bann_user(descriptiondto.description, usernamedto.username)
+	@Post('ban')
+	bann(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
+		console.log(chatopdto)
+		this.chatservice.bann_user(chatopdto.description, chatopdto.username)
 	}
 
 	@Post('mute')
-	mute(@GetUser() user: any, @Body() descriptiondto: descriptionDto, usernamedto: usernameDto) {
-		console.log(descriptiondto, usernamedto)
-		this.chatservice.mute_user(descriptiondto.description, usernamedto.username)
+	mute(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
+		console.log(chatopdto)
+		this.chatservice.mute_user(chatopdto.description, chatopdto.username)
 	}
 
 	@Post('unmute')
-	unmute(@GetUser() user: any, @Body() descriptiondto: descriptionDto, usernamedto: usernameDto) {
-		console.log(descriptiondto, usernamedto)
-		this.chatservice.unmute_user(descriptiondto.description, usernamedto.username)
+	unmute(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
+		console.log(chatopdto)
+		this.chatservice.unmute_user(chatopdto.description, chatopdto.username)
 	}
 
 
