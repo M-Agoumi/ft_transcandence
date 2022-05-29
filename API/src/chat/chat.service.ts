@@ -126,6 +126,13 @@ export class ChatService {
 		await this.convoRepository.save(loadedRoom)
 	}
 
+	async kick_user(userName: string, room_description: string) {
+		let ret = await this.check_if_admin_or_owner(room_description, userName)
+		if (!ret.owner) {
+			this.leaveRoom(userName, room_description)
+		}
+	}
+
 	async leaveRoom(userName: string, room_description: string) {
 		try {
 			const user = await this.userRepository.findOne({
@@ -420,7 +427,19 @@ export class ChatService {
 		})
 		room.muted.push(user)
 		this.convoRepository.save(room)
+		setTimeout(function () {
+			const index = room.banned.indexOf(user)
+			if (index > -1)
+				room.banned.splice(index, 1)
+			this.convoRepository.save(room)
+			console.log('unbanned')
+		}, 300000)
 	}
+
+	// async kick_user(room_description: string, kicked_username: string)
+	// {
+
+	// }
 
 	async unmute_user(room_description: string, muted_username: string) {
 		const user = await this.userRepository.findOneBy({ username: muted_username })
@@ -585,7 +604,7 @@ export class ChatService {
 		await this.userRepository.save(user)
 	}
 
-	async chech_if_admin_or_owner(description: string, current_username: string) {
+	async check_if_admin_or_owner(description: string, current_username: string) {
 		const obj = { administrator: false, owner: false }
 		const loadedRoom = await this.convoRepository.findOne({
 			where: {

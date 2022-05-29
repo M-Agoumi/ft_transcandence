@@ -105,7 +105,7 @@ export class ChatController {
 	@Post('ad_ow')
 	chech_if_admin_or_owner(@GetUser() user: any, @Body() descriptiondto: descriptionDto) {
 		console.log(descriptiondto)
-		this.chatservice.chech_if_admin_or_owner(descriptiondto.description, user.username)
+		this.chatservice.check_if_admin_or_owner(descriptiondto.description, user.username)
 	}
 
 	@Post('ban')
@@ -124,6 +124,12 @@ export class ChatController {
 	unmute(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
 		console.log(chatopdto)
 		this.chatservice.unmute_user(chatopdto.description, chatopdto.username)
+	}
+
+	@Post('kick')
+	kick(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
+		console.log(chatopdto)
+		this.chatservice.leaveRoom(chatopdto.username, chatopdto.description)
 	}
 
 
