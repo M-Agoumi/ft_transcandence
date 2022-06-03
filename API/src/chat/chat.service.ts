@@ -129,8 +129,9 @@ export class ChatService {
 	async kick_user(userName: string, room_description: string) {
 		let ret = await this.check_if_admin_or_owner(room_description, userName)
 		if (!ret.owner) {
-			this.leaveRoom(userName, room_description)
+			return this.leaveRoom(userName, room_description)
 		}
+		return { status: 'owner' }
 	}
 
 	async leaveRoom(userName: string, room_description: string) {
@@ -150,7 +151,7 @@ export class ChatService {
 					owner: true
 				}
 			})
-			//remove from users list
+			//remove from users list=
 			let index = loadedRoom.users.findIndex(i => i.username === user.username)
 			if (index > -1)
 				loadedRoom.users.splice(index, 1)
@@ -171,7 +172,6 @@ export class ChatService {
 			index = user.rooms.findIndex(room => room.description === loadedRoom.description)
 			if (index > -1)
 				user.rooms.splice(index, 1)
-
 			await this.userRepository.save(user)
 			return ({ status: true })
 		}
@@ -341,34 +341,21 @@ export class ChatService {
 		this.convoRepository.save(room)
 	}
 
-	// async kickUser(room_description: string, kicked_username: string) {
-	// 	const user = await this.userRepository.findOneBy({ username: kicked_username })
-	// 	const room = await this.convoRepository.findOne({
-	// 		where: {
-	// 			description: room_description
-	// 		},
-	// 		relations: {
-	// 			users: true
-	// 		}
-	// 	})
-	// 	let index = room.users.findIndex(room_user => room_user.username === user.username)
-	// 	if (index > -1)
-	// 		room.users.splice
-
-	// }
-
 	async bann_user(room_description: string, banned_username: string) {
 		try {
-
 			const user = await this.userRepository.findOneBy({ username: banned_username })
 			const room = await this.convoRepository.findOne({
 				where: {
 					description: room_description
 				},
 				relations: {
-					banned: true
+					banned: true,
+					owner: true
 				}
 			})
+			let index = room.owner.findIndex(u => u.username === banned_username)
+			if (index > -1)
+				return ({ stats: "owner" })
 			this.leaveRoom(user.username, room_description)
 			room.banned.push(user)
 			this.convoRepository.save(room)
@@ -394,21 +381,27 @@ export class ChatService {
 	}
 
 	async roomUsers(descriptiondto: descriptionDto) {
-		let users: string[] = []
-
+		let users: { user: string, muted: boolean }[] = []
+		let muted: boolean = false
 
 		const room = await this.convoRepository.findOne({
 			where: {
 				description: descriptiondto.description
 			},
 			relations: {
-				users: true
+				users: true,
+				muted: true
 			}
 		})
 		if (room) {
 			for (const k in room.users) {
-				users.push(room.users[k].username)
+				muted = false
+				let index = room.muted.findIndex(u => u.username === room.users[k].username)
+				if (index > -1)
+					muted = true
+				users.push({ user: room.users[k].username, muted: muted })
 			}
+			// console.log(users)
 			return users
 		}
 		else
@@ -416,30 +409,33 @@ export class ChatService {
 	}
 
 	async mute_user(room_description: string, muted_username: string) {
-		const user = await this.userRepository.findOneBy({ username: muted_username })
+		console.log(muted_username)
 		const room = await this.convoRepository.findOne({
 			where: {
 				description: room_description
 			},
 			relations: {
-				muted: true
+				muted: true,
+				owner: true
 			}
 		})
+		let index = room.owner.findIndex(u => u.username === muted_username)
+		if (index > -1)
+			return ({ status: 'owner' })
+		const user = await this.userRepository.findOneBy({ username: muted_username })
 		room.muted.push(user)
 		this.convoRepository.save(room)
+		console.log(room)
+		let repo = this.convoRepository
 		setTimeout(function () {
-			const index = room.banned.indexOf(user)
+			const index = room.muted.indexOf(user)
 			if (index > -1)
-				room.banned.splice(index, 1)
-			this.convoRepository.save(room)
+				room.muted.splice(index, 1)
+			repo.save(room)
 			console.log('unbanned')
 		}, 300000)
+		return { status: true }
 	}
-
-	// async kick_user(room_description: string, kicked_username: string)
-	// {
-
-	// }
 
 	async unmute_user(room_description: string, muted_username: string) {
 		const user = await this.userRepository.findOneBy({ username: muted_username })

@@ -117,7 +117,7 @@ export class ChatController {
 	@Post('mute')
 	mute(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
 		console.log(chatopdto)
-		this.chatservice.mute_user(chatopdto.description, chatopdto.username)
+		return this.chatservice.mute_user(chatopdto.description, chatopdto.username)
 	}
 
 	@Post('unmute')
@@ -129,7 +129,7 @@ export class ChatController {
 	@Post('kick')
 	kick(@GetUser() user: any, @Body() chatopdto: chatOpDto) {
 		console.log(chatopdto)
-		this.chatservice.leaveRoom(chatopdto.username, chatopdto.description)
+		return this.chatservice.kick_user(chatopdto.username, chatopdto.description)
 	}
 
 
